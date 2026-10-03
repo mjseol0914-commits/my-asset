@@ -105,16 +105,15 @@
   .eyebrow::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--gold); display:inline-block; box-shadow:0 0 8px var(--gold);}
   h1.title{ font-family:var(--serif); font-weight:600; font-size:clamp(26px,3.6vw,36px); letter-spacing:-0.01em; margin-top:10px; }
 
-  .date-control{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
-  .date-row{ display:flex; align-items:center; gap:10px; }
-  .date-row label{ font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
-  .date-row input[type=date]{
-    background:var(--card); border:1px solid var(--line); color:var(--ink); padding:8px 12px; border-radius:9px;
-    font-family:var(--mono); font-size:13px; color-scheme:light;
+  .date-widget{ margin-top:16px; padding:12px 10px 16px; border-top:1px solid var(--line); }
+  .date-widget-label{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-dim); margin-bottom:6px; }
+  .date-widget-input{
+    display:block; width:100%; background:var(--card); border:1px solid var(--line); color:var(--ink);
+    padding:7px 10px; border-radius:7px; font-family:var(--mono); font-size:12.5px; color-scheme:light; margin-bottom:6px;
   }
-  .date-row input[type=date]:focus{ outline:none; border-color:var(--gold-dim); }
-  .date-note{ font-family:var(--mono); font-size:11px; color:var(--gold); text-align:right; }
-  .date-hint{ font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); text-align:right; }
+  .date-widget-input:focus{ outline:none; border-color:var(--gold-dim); }
+  .date-note{ font-family:var(--mono); font-size:10px; color:var(--gold); text-align:left; margin-top:8px; line-height:1.5; }
+  .date-hint{ font-family:var(--mono); font-size:9.5px; color:var(--ink-faint); text-align:left; margin-top:4px; line-height:1.5; }
 
   .hero-figure{ display:flex; align-items:flex-end; gap:36px; flex-wrap:wrap; }
   .hero-num .label{ font-size:12.5px; color:var(--ink-dim); letter-spacing:.04em; margin-bottom:6px; }
@@ -234,6 +233,9 @@
   .cat-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 6px; border-bottom:1px solid var(--line); }
   .cat-row:last-child{ border-bottom:none; }
   .cat-row .swatch{ width:16px; height:16px; border-radius:5px; display:inline-block; border:1px solid var(--line); flex-shrink:0; }
+  .swatch-input{ width:22px; height:22px; padding:0; border:1px solid var(--line); border-radius:5px; cursor:pointer; flex-shrink:0; background:none; }
+  .swatch-input::-webkit-color-swatch-wrapper{ padding:2px; }
+  .swatch-input::-webkit-color-swatch{ border:none; border-radius:3px; }
   .cat-row .cat-name{ font-weight:600; font-size:14px; }
   .cat-row .cat-actions{ display:flex; gap:6px; align-items:center; }
   .icon-btn{ font-family:var(--mono); font-size:13px; padding:5px 10px; border-radius:7px; border:1px solid var(--line); background:transparent; color:var(--ink-dim); cursor:pointer; }
@@ -250,6 +252,13 @@
     <div class="brand">
       <div class="eyebrow">Personal Ledger</div>
       <h1>자산관리</h1>
+      <div class="date-widget">
+        <label for="asOfDate" class="date-widget-label">기준일</label>
+        <input type="date" id="asOfDate" class="date-widget-input">
+        <button class="drive-btn drive-btn-ghost" id="btnToday" type="button">오늘</button>
+        <div class="date-note" id="dateNote"></div>
+        <div class="date-hint" id="dateHint"></div>
+      </div>
       <div class="drive-widget">
         <div id="driveStatus" class="drive-status">확인 중...</div>
         <button class="drive-btn drive-btn-primary" id="driveConnectBtn" type="button">Google Drive 연결</button>
@@ -299,15 +308,6 @@
             <div>
               <div class="eyebrow">Portfolio Overview</div>
               <h1 class="title">자산관리 대시보드</h1>
-            </div>
-            <div class="date-control">
-              <div class="date-row">
-                <label for="asOfDate">기준일</label>
-                <input type="date" id="asOfDate">
-                <button class="btn btn-ghost" id="btnToday" type="button" style="padding:7px 12px;font-size:12px;">오늘</button>
-              </div>
-              <div class="date-note" id="dateNote"></div>
-              <div class="date-hint" id="dateHint"></div>
             </div>
           </div>
 
@@ -1063,12 +1063,23 @@ if(typeof Chart !== 'undefined' && Chart.defaults){
 
 let trendChartInst=null, monthlyBarInst=null, acctDonutInst=null, assetDonutInst=null;
 
+// Create a chart but never let a failure here (bad canvas, Chart.js quirk, etc.) take down
+// the rest of the script — later wiring (버튼, 페이지 전환 등) must always still run.
+function safeNewChart(canvasId, config){
+  try{
+    return new Chart(document.getElementById(canvasId), config);
+  }catch(err){
+    console.error('Chart creation failed for #' + canvasId + ':', err);
+    return null;
+  }
+}
+
 try{
 
 /* ============================================================
    STATIC CHARTS (full history, unaffected by 기준일)
    ============================================================ */
-trendChartInst = new Chart(document.getElementById('trendChart'), {
+trendChartInst = safeNewChart('trendChart', {
   type:'line',
   data:{
     labels: history.map(h=>h[0]),
@@ -1096,7 +1107,7 @@ trendChartInst = new Chart(document.getElementById('trendChart'), {
 });
 
 const monthlyReturns = history.map((h,i)=>{ if(i===0) return 0; const prev = history[i-1][2]; return prev ? ((h[2]-prev)/prev*100) : 0; });
-monthlyBarInst = new Chart(document.getElementById('monthlyBar'), {
+monthlyBarInst = safeNewChart('monthlyBar', {
   type:'bar',
   data:{ labels: history.map(h=>h[0]), datasets:[{ data: monthlyReturns,
     backgroundColor: monthlyReturns.map(v=> v>=0 ? 'rgba(200,67,58,0.75)' : 'rgba(53,104,201,0.75)'), borderRadius:3, maxBarThickness:20 }] },
@@ -1132,7 +1143,7 @@ function computeAssetClasses(holdings){
 
 function donut(id, existing, labels, data, colors){
   if(existing) existing.destroy();
-  return new Chart(document.getElementById(id), {
+  return safeNewChart(id, {
     type:'doughnut',
     data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:'#ffffff', borderWidth:3, hoverOffset:6 }] },
     options:{
@@ -1299,7 +1310,7 @@ document.getElementById('btnToday').addEventListener('click', ()=>{
   triggerRender();
 });
 
-triggerRender();
+try{ triggerRender(); }catch(e){ console.error('initial triggerRender failed:', e); }
 
 /* ============================================================
    PRINCIPAL PAGE
@@ -1391,7 +1402,7 @@ function renderPrincipalPage(){
     });
   });
 }
-renderPrincipalPage();
+try{ renderPrincipalPage(); }catch(e){ console.error('initial renderPrincipalPage failed:', e); }
 
 function generateDateRange(startISO, endISO, stepMonths){
   const dates = [];
@@ -1821,7 +1832,7 @@ function renderRegistryPage(filter){
     return `<div class="stat-card"><div class="label">${a}</div><div class="value" style="color:${ACCT_COLOR[a]}">${count}건</div></div>`;
   }).join('');
 }
-renderRegistryPage('전체');
+try{ renderRegistryPage('전체'); }catch(e){ console.error('initial renderRegistryPage failed:', e); }
 
 let regLookupTimer = null;
 document.getElementById('regCode').addEventListener('input', (e)=>{
@@ -1950,7 +1961,7 @@ function renderDividendsPage(){
   }));
 
   if(divMonthlyChartInst) divMonthlyChartInst.destroy();
-  divMonthlyChartInst = new Chart(document.getElementById('divMonthlyChart'), {
+  divMonthlyChartInst = safeNewChart('divMonthlyChart', {
     type:'bar',
     data:{ labels: divMonthlyLabels, datasets: monthlyDatasets },
     options:{
@@ -1971,7 +1982,7 @@ function renderDividendsPage(){
 
   // donut: total per account across all years
   if(divDonutInst) divDonutInst.destroy();
-  divDonutInst = new Chart(document.getElementById('divDonut'), {
+  divDonutInst = safeNewChart('divDonut', {
     type:'doughnut',
     data:{ labels: getAccountNames(), datasets:[{ data: getAccountNames().map(a=>divAcctTotal(a)),
       backgroundColor: getAccountNames().map(a=>ACCT_COLOR[a]), borderColor:'#ffffff', borderWidth:3, hoverOffset:6 }] },
@@ -2160,7 +2171,7 @@ document.getElementById('addDiv').addEventListener('click', ()=>{
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
 });
 
-renderDividendsPage();
+try{ renderDividendsPage(); }catch(e){ console.error('initial renderDividendsPage failed:', e); }
 
 
 }catch(err){
@@ -2246,7 +2257,7 @@ function renderAccountSettings(){
   container.innerHTML = accountList.map((a,i)=>`
     <div class="cat-row">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span class="swatch" style="background:${a.color};"></span>
+        <input type="color" class="swatch-input" data-acct-color="${i}" value="${a.color}" title="색상 변경">
         <span class="cat-name">${a.name}</span>
       </div>
       <div class="cat-actions">
@@ -2256,6 +2267,14 @@ function renderAccountSettings(){
       </div>
     </div>`).join('');
 
+  container.querySelectorAll('[data-acct-color]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const i = parseInt(inp.dataset.acctColor,10);
+      accountList[i].color = inp.value;
+      saveAccountList();
+      refreshAccountDependentUI();
+    });
+  });
   container.querySelectorAll('[data-acct-up]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const i = parseInt(btn.dataset.acctUp,10);
@@ -2311,7 +2330,7 @@ function renderCategorySettings(){
   container.innerHTML = categoryList.map((c,i)=>`
     <div class="cat-row">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span class="swatch" style="background:${c.color};"></span>
+        <input type="color" class="swatch-input" data-cat-color="${i}" value="${c.color}" title="색상 변경">
         <span class="cat-name">${c.name}</span>
       </div>
       <div class="cat-actions">
@@ -2321,6 +2340,14 @@ function renderCategorySettings(){
       </div>
     </div>`).join('');
 
+  container.querySelectorAll('[data-cat-color]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const i = parseInt(inp.dataset.catColor,10);
+      categoryList[i].color = inp.value;
+      saveCategoryList();
+      populateRegCategorySelect();
+    });
+  });
   container.querySelectorAll('[data-move-up]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const i = parseInt(btn.dataset.moveUp,10);
