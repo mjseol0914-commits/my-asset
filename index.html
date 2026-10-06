@@ -494,6 +494,27 @@
             </div>
           </div>
 
+          <div class="form-card" style="margin-bottom:24px;">
+            <div class="sec-head" style="margin-bottom:12px;">
+              <div class="sec-title">엑셀로 일괄 업로드</div>
+              <div class="sec-sub">.xlsx · .xls · .csv 지원</div>
+            </div>
+            <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
+              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자), <b>계좌</b>, <b>구분</b>(입금/출금), <b>금액</b>, <b>메모</b>(선택). 계좌명은 <span id="peUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+            </p>
+            <div class="form-grid" style="grid-template-columns:auto auto 1fr;align-items:end;">
+              <div class="field" style="min-width:220px;">
+                <label>파일 선택</label>
+                <input type="file" id="peFileInput" accept=".xlsx,.xls,.csv">
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" id="peUploadBtn" type="button" disabled>업로드 실행</button>
+              </div>
+            </div>
+            <div id="peUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
+          </div>
+
           <div class="card table-scroll" style="margin-bottom:24px;">
             <div style="padding:14px 16px 0;font-size:13px;font-weight:600;color:var(--ink-dim);">입출금 내역 (최신순)</div>
             <table>
@@ -699,6 +720,29 @@
               <button class="btn btn-primary" id="addDiv">배당금 등록</button>
               <span class="toast" id="divToast">등록되었습니다 ✓</span>
             </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">엑셀로 일괄 업로드</div>
+            <div class="sec-sub">.xlsx · .xls · .csv 지원</div>
+          </div>
+          <div class="form-card">
+            <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
+              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>지급일</b>(또는 날짜·일자), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(선택, 비워두면 종목명으로 등록), <b>배당금</b>(또는 금액), <b>메모</b>(선택). 계좌명은 <span id="divUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+            </p>
+            <div class="form-grid" style="grid-template-columns:auto auto 1fr;align-items:end;">
+              <div class="field" style="min-width:220px;">
+                <label>파일 선택</label>
+                <input type="file" id="divFileInput" accept=".xlsx,.xls,.csv">
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" id="divUploadBtn" type="button" disabled>업로드 실행</button>
+              </div>
+            </div>
+            <div id="divUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
           </div>
         </section>
 
@@ -987,8 +1031,10 @@ function populateAccountSelects(){
     sel.innerHTML = getAccountNames().map(n=>`<option>${n}</option>`).join('');
     if(getAccountNames().includes(prev)) sel.value = prev;
   });
-  const hint = document.getElementById('txUploadAccountHint');
-  if(hint) hint.textContent = getAccountNames().join('·');
+  ['txUploadAccountHint','peUploadAccountHint','divUploadAccountHint'].forEach(id=>{
+    const hint = document.getElementById(id);
+    if(hint) hint.textContent = getAccountNames().join('·');
+  });
 }
 populateAccountSelects();
 
@@ -1547,6 +1593,85 @@ document.getElementById('resetPrincipal').addEventListener('click', ()=>{
   renderPrincipalEntryTable();
   renderPrincipalPage();
   triggerRender();
+});
+
+/* ---- 입출금 내역: Excel/CSV bulk upload ---- */
+const peFileInput = document.getElementById('peFileInput');
+const peUploadBtn = document.getElementById('peUploadBtn');
+peFileInput.addEventListener('change', ()=>{
+  peUploadBtn.disabled = !peFileInput.files.length;
+  document.getElementById('peUploadStatus').textContent='';
+});
+
+const PE_HEADER_MAP = {
+  date: ['날짜','일자','거래일자','date'],
+  account: ['계좌','account'],
+  type: ['구분','입출금구분','type'],
+  amount: ['금액','입출금액','amount'],
+  memo: ['메모','비고','memo','note'],
+};
+
+peUploadBtn.addEventListener('click', async ()=>{
+  const status = document.getElementById('peUploadStatus');
+  const file = peFileInput.files[0];
+  if(!file) return;
+  peUploadBtn.disabled = true;
+  status.style.color = 'var(--ink-dim)';
+  status.textContent = '파일 읽는 중...';
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array', cellDates:true });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+    if(!rows.length){
+      status.textContent = '업로드할 데이터가 없습니다. 첫 행이 머리글인지 확인해주세요.';
+      status.style.color = 'var(--down)';
+      peUploadBtn.disabled = false;
+      return;
+    }
+
+    let addedCount=0, skippedCount=0;
+    const parsed = [];
+
+    rows.forEach(row=>{
+      const dateStr = normalizeExcelDate(pickField(row, PE_HEADER_MAP.date));
+      let account = String(pickField(row, PE_HEADER_MAP.account)||'').trim();
+      let type = String(pickField(row, PE_HEADER_MAP.type)||'').trim();
+      const amount = parseFloat(pickField(row, PE_HEADER_MAP.amount));
+      const memo = String(pickField(row, PE_HEADER_MAP.memo)||'').trim();
+
+      if(/deposit|입금|납입/i.test(type)) type='입금';
+      else if(/withdraw|출금|인출/i.test(type)) type='출금';
+
+      const knownAcct = getAccountNames().find(a=> account===a || account.includes(a) || a.includes(account));
+      if(knownAcct) account = knownAcct;
+
+      const valid = dateStr && getAccountNames().includes(account) && (type==='입금'||type==='출금') && amount>0;
+      if(!valid){ skippedCount++; return; }
+
+      parsed.push({ id: Date.now()+addedCount+Math.random(), date:dateStr, account, type, amount, memo });
+      addedCount++;
+    });
+
+    if(parsed.length){
+      principalEntries.push(...parsed);
+      localStorage.setItem('principalEntries', JSON.stringify(principalEntries));
+      scheduleAutoPush();
+      renderPrincipalEntryTable();
+      renderPrincipalPage();
+      triggerRender();
+    }
+
+    status.textContent = `업로드 완료 — 추가 ${addedCount}건, 형식 오류로 제외 ${skippedCount}건`;
+    status.style.color = addedCount ? 'var(--up)' : 'var(--down)';
+    peFileInput.value = '';
+    peUploadBtn.disabled = true;
+  }catch(err){
+    console.error('엑셀 업로드 오류:', err);
+    status.textContent = '업로드 중 오류가 발생했습니다: ' + err.message;
+    status.style.color = 'var(--down)';
+    peUploadBtn.disabled = false;
+  }
 });
 
 /* ============================================================
@@ -2215,6 +2340,95 @@ document.getElementById('addDiv').addEventListener('click', ()=>{
   renderDividendsPage();
   const toast = document.getElementById('divToast');
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
+});
+
+/* ---- 배당금 관리: Excel/CSV bulk upload ---- */
+const divFileInput = document.getElementById('divFileInput');
+const divUploadBtn = document.getElementById('divUploadBtn');
+divFileInput.addEventListener('change', ()=>{
+  divUploadBtn.disabled = !divFileInput.files.length;
+  document.getElementById('divUploadStatus').textContent='';
+});
+
+const DIV_HEADER_MAP = {
+  date: ['지급일','날짜','일자','date'],
+  account: ['계좌','account'],
+  code: ['종목코드','코드','code'],
+  name: ['종목명','종목','name'],
+  amount: ['배당금','금액','배당금(세후)','amount'],
+  memo: ['메모','비고','memo','note'],
+};
+
+divUploadBtn.addEventListener('click', async ()=>{
+  const status = document.getElementById('divUploadStatus');
+  const file = divFileInput.files[0];
+  if(!file) return;
+  divUploadBtn.disabled = true;
+  status.style.color = 'var(--ink-dim)';
+  status.textContent = '파일 읽는 중...';
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array', cellDates:true });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+    if(!rows.length){
+      status.textContent = '업로드할 데이터가 없습니다. 첫 행이 머리글인지 확인해주세요.';
+      status.style.color = 'var(--down)';
+      divUploadBtn.disabled = false;
+      return;
+    }
+
+    let addedCount=0, skippedCount=0;
+    const parsed = [];
+    const toLookup = [];
+
+    rows.forEach(row=>{
+      const dateStr = normalizeExcelDate(pickField(row, DIV_HEADER_MAP.date));
+      let account = String(pickField(row, DIV_HEADER_MAP.account)||'').trim();
+      const code = String(pickField(row, DIV_HEADER_MAP.code)||'').trim();
+      let name = String(pickField(row, DIV_HEADER_MAP.name)||'').trim();
+      const amount = parseFloat(pickField(row, DIV_HEADER_MAP.amount));
+      const memo = String(pickField(row, DIV_HEADER_MAP.memo)||'').trim();
+
+      const knownAcct = getAccountNames().find(a=> account===a || account.includes(a) || a.includes(account));
+      if(knownAcct) account = knownAcct;
+
+      const valid = dateStr && getAccountNames().includes(account) && amount>0 && (name || code);
+      if(!valid){ skippedCount++; return; }
+
+      const entry = { id: Date.now()+addedCount+Math.random(), date:dateStr, account, code: code||'-', name, amount, memo };
+      parsed.push(entry);
+      if(!name && code) toLookup.push(entry);
+      addedCount++;
+    });
+
+    let lookedUpCount = 0;
+    if(toLookup.length){
+      status.textContent = `${addedCount}건 확인됨 · 종목명 ${toLookup.length}건 자동 조회 중...`;
+      await Promise.all(toLookup.map(async entry=>{
+        const result = await lookupStockName(entry.code);
+        if(result && result.name){ entry.name = result.name; lookedUpCount++; }
+        else entry.name = '(종목명 미확인)';
+      }));
+    }
+
+    if(parsed.length){
+      userDividends.push(...parsed);
+      localStorage.setItem('userDividends', JSON.stringify(userDividends));
+      scheduleAutoPush();
+      renderDividendsPage();
+    }
+
+    status.textContent = `업로드 완료 — 추가 ${addedCount}건` + (lookedUpCount ? ` (종목명 자동조회 ${lookedUpCount}건)` : '') + `, 형식 오류로 제외 ${skippedCount}건`;
+    status.style.color = addedCount ? 'var(--up)' : 'var(--down)';
+    divFileInput.value = '';
+    divUploadBtn.disabled = true;
+  }catch(err){
+    console.error('엑셀 업로드 오류:', err);
+    status.textContent = '업로드 중 오류가 발생했습니다: ' + err.message;
+    status.style.color = 'var(--down)';
+    divUploadBtn.disabled = false;
+  }
 });
 
 try{ renderDividendsPage(); }catch(e){ console.error('initial renderDividendsPage failed:', e); }
