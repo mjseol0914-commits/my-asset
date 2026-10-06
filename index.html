@@ -469,18 +469,47 @@
               </div>
             </div>
           </div>
+          <div class="form-card" style="margin-bottom:24px;">
+            <h3 style="margin-bottom:12px;">입출금 내역 추가</h3>
+            <div class="form-grid" style="align-items:end;">
+              <div class="field"><label>날짜</label><input type="date" id="peDate"></div>
+              <div class="field">
+                <label>계좌</label>
+                <select id="peAccount"></select>
+              </div>
+              <div class="field">
+                <label>구분</label>
+                <select id="peType"><option value="입금">입금</option><option value="출금">출금</option></select>
+              </div>
+              <div class="field"><label>금액</label><input type="number" id="peAmount" min="0" step="1" placeholder="0"></div>
+              <div class="field"><label>메모 (선택)</label><input type="text" id="peMemo" placeholder="예: 추가 납입"></div>
+              <div class="field" style="min-width:100px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" id="addPrincipalEntry" type="button">추가</button>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-ghost" id="resetPrincipal" style="color:var(--down);border-color:var(--down);">입출금 내역 전체 삭제</button>
+              <span class="toast" id="peToast">추가되었습니다 ✓</span>
+            </div>
+          </div>
+
+          <div class="card table-scroll" style="margin-bottom:24px;">
+            <div style="padding:14px 16px 0;font-size:13px;font-weight:600;color:var(--ink-dim);">입출금 내역 (최신순)</div>
+            <table>
+              <thead><tr><th>날짜</th><th>계좌</th><th>구분</th><th>금액</th><th>메모</th><th></th></tr></thead>
+              <tbody id="principalEntryTable"></tbody>
+            </table>
+            <div class="empty-state" id="principalEntryEmpty" style="display:none;">입력된 입출금 내역이 없습니다.</div>
+          </div>
+
           <div class="summary-strip" id="principalSummary"></div>
           <div class="card">
             <table>
-              <thead><tr><th>기준일</th><th>계좌</th><th>스프레드시트 원금</th><th>사용자 지정 원금</th><th>반영 원금대비수익률</th><th></th></tr></thead>
+              <thead><tr><th>기준일</th><th>계좌</th><th>누적 원금</th><th>반영 원금대비수익률</th></tr></thead>
               <tbody id="principalTable"></tbody>
             </table>
             <div class="empty-state" id="principalEmpty" style="display:none;">설정된 기준일이 없습니다. 위에서 범위를 생성하거나 날짜를 추가해주세요.</div>
-            <div class="btn-row">
-              <button class="btn btn-primary" id="savePrincipal">전체 저장</button>
-              <button class="btn btn-ghost" id="resetPrincipal">원금 값 전체 초기화</button>
-              <span class="toast" id="principalToast">저장되었습니다 ✓</span>
-            </div>
           </div>
         </section>
       </div>
@@ -951,7 +980,7 @@ const ACCT_COLOR = new Proxy({}, { get: (_, name) => getAccountColor(String(name
 // Populate every 계좌 <select> in the app from the current account list, preserving the
 // previously-selected value when it still exists. Called on load and whenever accounts change.
 function populateAccountSelects(){
-  ['regAccount','txAccount','divAccount'].forEach(id=>{
+  ['regAccount','txAccount','divAccount','peAccount'].forEach(id=>{
     const sel = document.getElementById(id);
     if(!sel) return;
     const prev = sel.value;
@@ -1047,8 +1076,11 @@ function nearestSnapshot(iso){
 /* ============================================================
    LOCAL STORAGE STATE
    ============================================================ */
-let principalOverrides = {};
-try{ principalOverrides = JSON.parse(localStorage.getItem('principalOverrides') || '{}'); }catch(e){ principalOverrides = {}; }
+// Deposit/withdrawal log: each entry is {id, date, account, type('입금'|'출금'), amount, memo}.
+// A date's principal for an account is the running (cumulative) sum of every entry for that
+// account dated on or before it — see getPrincipal() below.
+let principalEntries = [];
+try{ principalEntries = JSON.parse(localStorage.getItem('principalEntries') || '[]'); }catch(e){ principalEntries = []; }
 
 let transactions = [];
 try{ transactions = JSON.parse(localStorage.getItem('transactions') || '[]'); }catch(e){ transactions = []; }
@@ -1162,9 +1194,9 @@ let currentHoldings = getHoldingsForDate(currentSnapshotDate);
 let currentAccounts = getAccountsForDate(currentSnapshotDate);
 
 function getPrincipal(acctName, dateKey){
-  const key = dateKey+'__'+acctName;
-  if(principalOverrides.hasOwnProperty(key)) return principalOverrides[key];
-  return getAccountsForDate(dateKey)[acctName].principal;
+  return principalEntries
+    .filter(e=> e.account===acctName && e.date <= dateKey)
+    .reduce((sum,e)=> sum + (e.type==='출금' ? -e.amount : e.amount), 0);
 }
 
 function renderDashboard(requestedIso){
@@ -1325,7 +1357,7 @@ function renderPrincipalPage(){
     empty.style.display = 'block';
     document.getElementById('principalSummary').innerHTML = `
       <div class="stat-card"><div class="label">전체 항목 수</div><div class="value">0건</div></div>
-      <div class="stat-card"><div class="label">사용자 지정 입력됨</div><div class="value pos">0건</div></div>
+      <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${principalEntries.length}건</div></div>
       <div class="stat-card"><div class="label">현재 대시보드 기준일</div><div class="value" style="font-size:16px;">–</div></div>
       <div class="stat-card"><div class="label">기준일 범위</div><div class="value" style="font-size:16px;">–</div></div>
     `;
@@ -1333,20 +1365,13 @@ function renderPrincipalPage(){
   }
   empty.style.display = 'none';
 
-  let overrideCount = 0;
   const rowsHtml = [];
   datesDesc.forEach(dateKey=>{
     getAccountNames().forEach((name, idx)=>{
       const acctData = getAccountsForDate(dateKey)[name];
-      const original = acctData.principal;
       const current = getPrincipal(name, dateKey);
       const totalVal = acctData.valuation + acctData.cash;
       const ret = current ? ((totalVal-current)/current*100) : 0;
-      const isOverridden = current !== original;
-      if(isOverridden) overrideCount++;
-      const diffTagHtml = isOverridden
-        ? `<span class="diff-tag ${current>original?'pos':'neg'}" style="background:${current>original?'var(--up-bg)':'var(--down-bg)'}">${current>original?'+':''}${won(current-original)}</span>`
-        : '';
       const isCurrent = dateKey === currentSnapshotDate;
       const dateCell = idx===0
         ? `<span class="date-link" data-date="${dateKey}" style="cursor:pointer;color:${isCurrent?'var(--gold)':'var(--ink)'};font-family:var(--mono);text-decoration:underline dotted;">${fmtDot(dateKey)}</span> <button class="btn-danger" data-remove-date="${dateKey}" title="이 기준일 삭제" style="margin-left:4px;">✕</button>`
@@ -1354,10 +1379,8 @@ function renderPrincipalPage(){
       rowsHtml.push(`<tr style="${isCurrent?'background:var(--card-hi);':''}">
         <td>${dateCell}</td>
         <td><span class="grp-badge" style="border-color:${ACCT_COLOR[name]}55;color:${ACCT_COLOR[name]}">${name}</span></td>
-        <td>${won(original)}</td>
-        <td><input class="edit-input" type="number" data-date="${dateKey}" data-acct="${name}" value="${current}">${diffTagHtml}</td>
+        <td>${won(current)}</td>
         <td class="${clsFor(ret)}">${pct(ret)}</td>
-        <td>${isOverridden ? `<button class="btn-danger" data-reset-date="${dateKey}" data-reset-acct="${name}">초기화</button>` : ''}</td>
       </tr>`);
     });
   });
@@ -1365,7 +1388,7 @@ function renderPrincipalPage(){
 
   document.getElementById('principalSummary').innerHTML = `
     <div class="stat-card"><div class="label">전체 항목 수</div><div class="value">${datesDesc.length * getAccountNames().length}건</div></div>
-    <div class="stat-card"><div class="label">사용자 지정 입력됨</div><div class="value pos">${overrideCount}건</div></div>
+    <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${principalEntries.length}건</div></div>
     <div class="stat-card"><div class="label">현재 대시보드 기준일</div><div class="value" style="font-size:16px;">${fmtDot(currentSnapshotDate)}</div></div>
     <div class="stat-card"><div class="label">기준일 범위</div><div class="value" style="font-size:16px;">${fmtDot(datesDesc[datesDesc.length-1])} ~ ${fmtDot(datesDesc[0])}</div></div>
   `;
@@ -1377,25 +1400,13 @@ function renderPrincipalPage(){
       document.querySelector('.nav-item[data-page="dashboard"]').click();
     });
   });
-  tbody.querySelectorAll('[data-reset-date]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      delete principalOverrides[btn.dataset.resetDate+'__'+btn.dataset.resetAcct];
-      localStorage.setItem('principalOverrides', JSON.stringify(principalOverrides));
-      scheduleAutoPush();
-      renderPrincipalPage();
-      triggerRender();
-    });
-  });
   tbody.querySelectorAll('[data-remove-date]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.stopPropagation();
       const d = btn.dataset.removeDate;
-      if(!confirm(`${fmtDot(d)} 기준일을 삭제할까요? 해당 날짜에 입력한 사용자 지정 원금도 함께 삭제됩니다.`)) return;
+      if(!confirm(`${fmtDot(d)} 기준일을 삭제할까요? (이 기준일 표시만 삭제되며, 입출금 내역은 그대로 유지됩니다)`)) return;
       customDates = customDates.filter(x=>x!==d);
       localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-      scheduleAutoPush();
-      getAccountNames().forEach(name=> delete principalOverrides[d+'__'+name]);
-      localStorage.setItem('principalOverrides', JSON.stringify(principalOverrides));
       scheduleAutoPush();
       renderPrincipalPage();
       triggerRender();
@@ -1403,6 +1414,37 @@ function renderPrincipalPage(){
   });
 }
 try{ renderPrincipalPage(); }catch(e){ console.error('initial renderPrincipalPage failed:', e); }
+
+function renderPrincipalEntryTable(){
+  const sorted = [...principalEntries].sort((a,b)=> b.date.localeCompare(a.date) || b.id - a.id);
+  const tbody = document.getElementById('principalEntryTable');
+  const empty = document.getElementById('principalEntryEmpty');
+  if(sorted.length === 0){
+    tbody.innerHTML = ''; empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = sorted.map(e=>`
+      <tr>
+        <td>${fmtDot(e.date)}</td>
+        <td><span class="grp-badge" style="border-color:${ACCT_COLOR[e.account]||'#8a8d99'}55;color:${ACCT_COLOR[e.account]||'#8a8d99'}">${e.account}</span></td>
+        <td class="${e.type==='입금'?'pos':'down'}">${e.type}</td>
+        <td>${won(e.amount)}</td>
+        <td>${e.memo ? e.memo : ''}</td>
+        <td><button class="btn-danger" data-id="${e.id}">삭제</button></td>
+      </tr>`).join('');
+    tbody.querySelectorAll('.btn-danger').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        principalEntries = principalEntries.filter(e=>String(e.id)!==btn.dataset.id);
+        localStorage.setItem('principalEntries', JSON.stringify(principalEntries));
+        scheduleAutoPush();
+        renderPrincipalEntryTable();
+        renderPrincipalPage();
+        triggerRender();
+      });
+    });
+  }
+}
+try{ renderPrincipalEntryTable(); }catch(e){ console.error('initial renderPrincipalEntryTable failed:', e); }
 
 function generateDateRange(startISO, endISO, stepMonths){
   const dates = [];
@@ -1432,12 +1474,9 @@ document.getElementById('generateRange').addEventListener('click', ()=>{
   if(start > end){ alert('종료일은 시작일보다 이후여야 합니다.'); return; }
   const range = generateDateRange(start, end, step);
   if(range.length === 0){ alert('생성된 날짜가 없습니다. 날짜를 다시 확인해주세요.'); return; }
-  if(customDates.length > 0 && !confirm(`기존에 설정된 기준일 ${customDates.length}건이 모두 새 범위(${range.length}건)로 교체됩니다. 계속할까요?`)) return;
+  if(customDates.length > 0 && !confirm(`기존에 설정된 기준일 ${customDates.length}건이 모두 새 범위(${range.length}건)로 교체됩니다. (입출금 내역은 유지됩니다) 계속할까요?`)) return;
   customDates = range;
   localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-  scheduleAutoPush();
-  principalOverrides = {};
-  localStorage.setItem('principalOverrides', JSON.stringify(principalOverrides));
   scheduleAutoPush();
   renderPrincipalPage();
   dateInput.value = range[range.length-1];
@@ -1447,12 +1486,9 @@ document.getElementById('generateRange').addEventListener('click', ()=>{
 
 document.getElementById('clearAllDates').addEventListener('click', ()=>{
   if(customDates.length === 0){ alert('삭제할 기준일이 없습니다.'); return; }
-  if(!confirm('설정된 모든 기준일과 원금 입력값을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+  if(!confirm('설정된 모든 기준일을 삭제할까요? (입출금 내역은 유지됩니다) 이 작업은 되돌릴 수 없습니다.')) return;
   customDates = [];
   localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-  scheduleAutoPush();
-  principalOverrides = {};
-  localStorage.setItem('principalOverrides', JSON.stringify(principalOverrides));
   scheduleAutoPush();
   renderPrincipalPage();
   triggerRender();
@@ -1478,27 +1514,37 @@ document.getElementById('addPrincipalDateToday').addEventListener('click', ()=>{
   document.getElementById('addPrincipalDate').click();
 });
 
-document.getElementById('savePrincipal').addEventListener('click', ()=>{
-  document.querySelectorAll('#principalTable .edit-input').forEach(inp=>{
-    const date = inp.dataset.date, acct = inp.dataset.acct;
-    const val = parseFloat(inp.value);
-    if(!isNaN(val)){
-      principalOverrides[date+'__'+acct] = val;
-    }
-  });
-  localStorage.setItem('principalOverrides', JSON.stringify(principalOverrides));
+document.getElementById('peDate').value = toLocalISO(new Date());
+
+document.getElementById('addPrincipalEntry').addEventListener('click', ()=>{
+  const date = document.getElementById('peDate').value;
+  const account = document.getElementById('peAccount').value;
+  const type = document.getElementById('peType').value;
+  const amount = parseFloat(document.getElementById('peAmount').value);
+  const memo = document.getElementById('peMemo').value.trim();
+  if(!date || !account || !amount || amount<=0){
+    alert('날짜, 계좌, 금액을 올바르게 입력해주세요.');
+    return;
+  }
+  principalEntries.push({ id: Date.now(), date, account, type, amount, memo });
+  localStorage.setItem('principalEntries', JSON.stringify(principalEntries));
   scheduleAutoPush();
+  document.getElementById('peAmount').value = '';
+  document.getElementById('peMemo').value = '';
+  renderPrincipalEntryTable();
   renderPrincipalPage();
   triggerRender();
-  const toast = document.getElementById('principalToast');
+  const toast = document.getElementById('peToast');
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
 });
 
 document.getElementById('resetPrincipal').addEventListener('click', ()=>{
-  if(!confirm('입력한 모든 기준일 · 계좌의 사용자 지정 원금을 초기화할까요?')) return;
-  principalOverrides = {};
-  localStorage.setItem('principalOverrides', JSON.stringify(principalOverrides));
+  if(principalEntries.length === 0){ alert('삭제할 입출금 내역이 없습니다.'); return; }
+  if(!confirm('입력된 모든 입출금 내역을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+  principalEntries = [];
+  localStorage.setItem('principalEntries', JSON.stringify(principalEntries));
   scheduleAutoPush();
+  renderPrincipalEntryTable();
   renderPrincipalPage();
   triggerRender();
 });
@@ -2399,7 +2445,7 @@ document.getElementById('addCategory').addEventListener('click', ()=>{
 const GOOGLE_CLIENT_ID = '48865465302-osuijlbusfmfit9ju16uuqlo8nb19smf.apps.googleusercontent.com'; // 가계부(my-budget)와 같은 저장소/주소에 올리면 그 앱에서 쓰던 클라이언트 ID를 그대로 재사용할 수 있습니다.
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME = 'asset-dashboard-sync.json';
-const SYNC_KEYS = ['principalOverrides','customPrincipalDates','transactions','userDividends','userStockRegistry','categoryList','accountList','pageOrder'];
+const SYNC_KEYS = ['principalEntries','customPrincipalDates','transactions','userDividends','userStockRegistry','categoryList','accountList','pageOrder'];
 
 let driveAccessToken = null;
 let driveFileId = localStorage.getItem('driveFileId') || null;
