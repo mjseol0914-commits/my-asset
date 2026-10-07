@@ -261,7 +261,7 @@
       <div class="eyebrow">Personal Ledger</div>
       <h1>자산관리</h1>
       <div class="date-widget">
-        <label for="asOfDate" class="date-widget-label">기준일</label>
+        <label for="asOfDate" class="date-widget-label">조회일</label>
         <input type="date" id="asOfDate" class="date-widget-input">
         <button class="drive-btn drive-btn-ghost" id="btnToday" type="button">오늘</button>
         <div class="date-note" id="dateNote"></div>
@@ -309,7 +309,7 @@
       </div>
     </div>
     <div class="sidebar-foot">
-      기준일은 원금 관리에서 추가 가능<br>모든 입력은 브라우저 로컬에 저장됨
+      조회일을 고르면 그 날짜 기준으로 표시됨<br>모든 입력은 브라우저 로컬에 저장됨
     </div>
   </nav>
 
@@ -344,9 +344,9 @@
 
       <div class="wrap" id="dashboardEmptyState" style="display:none;padding:60px 28px;">
         <div class="card" style="text-align:center;padding:48px 24px;">
-          <div style="font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:10px;">등록된 기준일이 없습니다</div>
+          <div style="font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:10px;">표시할 데이터가 없습니다</div>
           <p style="color:var(--ink-dim);font-size:13.5px;line-height:1.7;max-width:480px;margin:0 auto 20px;">
-            대시보드는 "원금 관리"에서 설정한 기준일을 기준으로 표시됩니다. 먼저 원금 관리 페이지에서 기준일 범위를 설정해주세요.
+            입출금 내역(원금 관리), 매수·매도 내역, 월말 평가금 중 하나를 입력하면 대시보드가 표시됩니다.
           </p>
           <button class="btn btn-primary" id="goToPrincipalBtn" type="button">원금 관리로 이동</button>
         </div>
@@ -367,7 +367,7 @@
         <section>
           <div class="sec-head">
             <div class="sec-title">포트폴리오 구성</div>
-            <div class="sec-sub" id="allocSub">기준일 · 계좌 · 자산군</div>
+            <div class="sec-sub" id="allocSub">조회일 · 계좌 · 자산군</div>
           </div>
           <div class="grid-2">
             <div class="card">
@@ -415,7 +415,7 @@
         <section>
           <div class="sec-head">
             <div class="sec-title">보유 종목</div>
-            <div class="sec-sub" id="holdingsSub">기준일 전체 보유 내역</div>
+            <div class="sec-sub" id="holdingsSub">조회일 전체 보유 내역</div>
           </div>
           <div class="pills" id="acctFilter" style="margin-bottom:16px;"></div>
           <div class="card table-scroll">
@@ -437,54 +437,11 @@
         <div class="wrap">
           <div class="eyebrow">Principal Editor</div>
           <h2>원금 관리</h2>
-          <p>기준일 범위를 원하는 대로 설정하고, 계좌별 원금(투입 원금)을 입력·수정할 수 있습니다. 여기서 설정한 기준일은 대시보드의 기준일 선택과 완전히 동일하게 사용됩니다.</p>
+          <p>입금·출금 내역을 기록하면 월말마다 계좌별 누적 원금이 자동으로 계산됩니다. 엑셀로 과거 내역을 한꺼번에 올릴 수도 있습니다.</p>
         </div>
       </div>
       <div class="wrap">
         <section>
-          <div class="form-card" style="margin-bottom:16px;">
-            <h3 style="margin-bottom:12px;">기준일 범위 한번에 설정</h3>
-            <div class="form-grid" style="grid-template-columns:1fr 1fr auto auto;align-items:end;">
-              <div class="field"><label>시작일</label><input type="date" id="rangeStartDate"></div>
-              <div class="field"><label>종료일</label><input type="date" id="rangeEndDate"></div>
-              <div class="field" style="min-width:110px;">
-                <label>주기</label>
-                <select id="rangeInterval">
-                  <option value="1">매월</option>
-                  <option value="3">분기별</option>
-                  <option value="6">반기별</option>
-                  <option value="12">연간</option>
-                </select>
-              </div>
-              <div class="field" style="min-width:100px;">
-                <label>&nbsp;</label>
-                <button class="btn btn-primary" id="generateRange" type="button">범위 생성</button>
-              </div>
-            </div>
-            <div id="rangePreview" style="margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);"></div>
-          </div>
-
-          <div class="form-card" style="margin-bottom:24px;">
-            <h3 style="margin-bottom:12px;">기준일 하나씩 추가</h3>
-            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
-              <div class="field" style="min-width:180px;">
-                <label>날짜</label>
-                <input type="date" id="newPrincipalDate">
-              </div>
-              <div class="field" style="min-width:100px;">
-                <label>&nbsp;</label>
-                <button class="btn btn-primary" id="addPrincipalDate" type="button">추가</button>
-              </div>
-              <div class="field" style="min-width:80px;">
-                <label>&nbsp;</label>
-                <button class="btn btn-ghost" id="addPrincipalDateToday" type="button">오늘</button>
-              </div>
-              <div class="field" style="min-width:110px;">
-                <label>&nbsp;</label>
-                <button class="btn btn-ghost" id="clearAllDates" type="button" style="color:var(--down);border-color:var(--down);">기준일 전체 삭제</button>
-              </div>
-            </div>
-          </div>
           <div class="form-card" style="margin-bottom:24px;">
             <h3 style="margin-bottom:12px;">입출금 내역 추가</h3>
             <div class="form-grid" style="align-items:end;">
@@ -543,10 +500,10 @@
           <div class="summary-strip" id="principalSummary"></div>
           <div class="card">
             <table>
-              <thead><tr><th>기준일</th><th>계좌</th><th>누적 원금</th><th>반영 원금대비수익률</th></tr></thead>
+              <thead><tr><th>월말</th><th>계좌</th><th>누적 원금</th><th>반영 원금대비수익률</th></tr></thead>
               <tbody id="principalTable"></tbody>
             </table>
-            <div class="empty-state" id="principalEmpty" style="display:none;">설정된 기준일이 없습니다. 위에서 범위를 생성하거나 날짜를 추가해주세요.</div>
+            <div class="empty-state" id="principalEmpty" style="display:none;">아직 입출금 내역이 없습니다. 아래에서 입금·출금을 추가하거나 엑셀로 업로드해주세요. 월별 표가 자동으로 만들어집니다.</div>
           </div>
         </section>
       </div>
@@ -851,16 +808,16 @@
 
         <section>
           <div class="sec-head">
-            <div class="sec-title">기준일 선택</div>
-            <div class="sec-sub">원금 관리의 기준일과 같은 목록입니다</div>
+            <div class="sec-title">입력할 날짜 선택</div>
+            <div class="sec-sub">매월 말일이 자동으로 나열됩니다 (입출금·매수매도 입력월부터)</div>
           </div>
           <div class="form-card">
             <div class="form-grid" style="grid-template-columns:auto auto auto auto 1fr;align-items:end;">
-              <div class="field" style="min-width:200px;"><label>입력할 기준일</label><select id="valDate"></select></div>
-              <div class="field" style="min-width:90px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valLastMonthEnd" type="button">지난달 말일 추가</button></div>
-              <div class="field" style="min-width:90px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valThisMonthEnd" type="button">이번 달 말일 추가</button></div>
-              <div class="field" style="min-width:170px;"><label>직접 날짜 추가</label><input type="date" id="valNewDate"></div>
-              <div class="field" style="min-width:80px;"><label>&nbsp;</label><button class="btn btn-primary" id="valAddDate" type="button">추가</button></div>
+              <div class="field" style="min-width:200px;"><label>입력할 날짜</label><select id="valDate"></select></div>
+              <div class="field" style="min-width:90px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valLastMonthEnd" type="button">지난달 말일</button></div>
+              <div class="field" style="min-width:90px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valThisMonthEnd" type="button">이번 달 말일</button></div>
+              <div class="field" style="min-width:170px;"><label>다른 날짜 직접 선택</label><input type="date" id="valNewDate"></div>
+              <div class="field" style="min-width:80px;"><label>&nbsp;</label><button class="btn btn-primary" id="valAddDate" type="button">이동</button></div>
             </div>
           </div>
         </section>
@@ -868,7 +825,7 @@
         <section>
           <div class="sec-head">
             <div class="sec-title">종목별 단가 입력</div>
-            <div class="sec-sub" id="valPriceSub">기준일을 선택해주세요</div>
+            <div class="sec-sub" id="valPriceSub">날짜를 선택해주세요</div>
           </div>
           <div class="card table-scroll">
             <table>
@@ -902,9 +859,9 @@
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 12px;">
               첫 행은 머리글이어야 합니다. 여러 달을 한 파일에 담아도 됩니다. 인식하는 컬럼:
-              <b>기준일</b>(또는 날짜), <b>종목코드</b>, <b>단가</b>(또는 현재가·종가), <b>종목명</b>(선택, 참고용),
+              <b>날짜</b>(또는 기준일), <b>종목코드</b>, <b>단가</b>(또는 현재가·종가), <b>종목명</b>(선택, 참고용),
               <b>계좌</b>, <b>예수금</b>(선택). 한 줄에 <u>종목코드+단가</u> 또는 <u>계좌+예수금</u>을 넣으면 됩니다.
-              같은 기준일·종목이 이미 있으면 덮어쓰고, 목록에 없는 기준일은 자동으로 추가됩니다.
+              같은 날짜·종목이 이미 있으면 덮어씁니다.
               계좌명은 <span id="valUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
             <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
@@ -919,11 +876,11 @@
         <section>
           <div class="sec-head">
             <div class="sec-title">입력 현황</div>
-            <div class="sec-sub">날짜를 누르면 해당 기준일로 이동</div>
+            <div class="sec-sub">날짜를 누르면 해당 날짜로 이동</div>
           </div>
           <div class="card table-scroll">
             <table>
-              <thead><tr><th>기준일</th><th>단가 입력 종목</th><th>평가금 합계 (예수금 포함)</th><th></th></tr></thead>
+              <thead><tr><th>날짜</th><th>단가 입력 종목</th><th>평가금 합계 (예수금 포함)</th><th></th></tr></thead>
               <tbody id="valStatusTable"></tbody>
             </table>
             <div class="empty-state" id="valStatusEmpty" style="display:none;">아직 입력된 월말 평가금이 없습니다.</div>
@@ -1253,32 +1210,55 @@ const holdingsByDate = {};
 
 const BASE_SNAPSHOT_DATES = Object.keys(holdingsByDate).sort();
 
-let customDates = [];
-try{ customDates = JSON.parse(localStorage.getItem('customPrincipalDates') || '[]'); }catch(e){ customDates = []; }
+// 기준일 제도는 폐지됨: 날짜 목록은 입력된 데이터에서 자동으로 만들어진다. (예전 저장값은 정리)
+try{ localStorage.removeItem('customPrincipalDates'); }catch(e){}
 
 let userStockRegistry = [];
 try{ userStockRegistry = JSON.parse(localStorage.getItem('userStockRegistry') || '[]'); }catch(e){ userStockRegistry = []; }
 
-// Live list of every date the app knows about: the 6 base snapshot dates + any dates
-// the user has added (e.g. via 원금 관리). This is the single source of truth used by
-// both the dashboard's date picker and the principal management page, so they stay unified.
+// 자동 날짜 목록: 가장 이른 입출금·매수매도·평가금 입력월부터 이번 달까지의 월말(이번 달은 오늘)
+// + 평가금을 직접 입력한 날짜. 별도의 설정이 필요 없다.
+function getDataStartDate(){
+  const ds = [];
+  try{ (principalEntries||[]).forEach(e=>{ if(e && e.date) ds.push(e.date); }); }catch(e){}
+  try{ (transactions||[]).forEach(e=>{ if(e && e.date) ds.push(e.date); }); }catch(e){}
+  try{ Object.keys(priceSnapshots||{}).forEach(d=>ds.push(d)); }catch(e){}
+  try{ Object.keys(cashSnapshots||{}).forEach(d=>ds.push(d)); }catch(e){}
+  const ok = ds.filter(d=> /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+  return ok.length ? ok[0] : null;
+}
 function getSnapshotDates(){
-  return Array.from(new Set([...BASE_SNAPSHOT_DATES, ...customDates])).sort();
+  const set = new Set(BASE_SNAPSHOT_DATES);
+  const start = getDataStartDate();
+  if(start){
+    const today = toLocalISO(new Date());
+    let y = parseInt(start.slice(0,4),10), m = parseInt(start.slice(5,7),10) - 1;
+    const ty = new Date().getFullYear(), tm = new Date().getMonth();
+    let guard = 0;
+    while((y < ty || (y === ty && m <= tm)) && guard++ < 1200){
+      const last = toLocalISO(new Date(y, m + 1, 0));
+      set.add(last > today ? today : last);
+      m++; if(m > 11){ m = 0; y++; }
+    }
+    try{ [...Object.keys(priceSnapshots||{}), ...Object.keys(cashSnapshots||{})].forEach(d=>{ if(hasValuationData(d)) set.add(d); }); }catch(e){}
+  }
+  return Array.from(set).sort();
 }
 
 // Safe accessors: return real data when a date has it, otherwise a clean zeroed fallback
 // (needed for any custom date the user adds that isn't one of the 6 base snapshots).
 function getAccountsForDate(date){
   if(accountsByDate[date]) return accountsByDate[date];
-  if(hasValuationData(date)) return valuationSnapshot(date).accounts;
+  if(hasValuationData(date) || dateHasLedger(date)) return valuationSnapshot(date).accounts;
   const zero = ()=>({principal:0, invested:0, valuation:0, cash:0});
   const result = {};
   getAccountNames().forEach(name=>{ result[name] = zero(); });
   return result;
 }
+function dateHasLedger(date){ const st = getDataStartDate(); return !!(st && date >= st); }
 function getHoldingsForDate(date){
   if(holdingsByDate[date]) return holdingsByDate[date];
-  if(hasValuationData(date)) return valuationSnapshot(date).rows;
+  if(hasValuationData(date) || dateHasLedger(date)) return valuationSnapshot(date).rows;
   return [];
 }
 
@@ -1322,12 +1302,6 @@ async function lookupStockName(codeRaw){
   }
 }
 
-function nearestSnapshot(iso){
-  const dates = getSnapshotDates();
-  let chosen = dates[0];
-  for(const d of dates){ if(d <= iso) chosen = d; else break; }
-  return chosen;
-}
 
 /* ============================================================
    LOCAL STORAGE STATE
@@ -1424,7 +1398,11 @@ function valuationSnapshot(date){
       detail.push({ account:name, code:h.code, name:h.name, qty:h.qty, avg, invested:h.invested, cur, val, gain, ret,
                     priceDate: pf ? pf.date : null, exact: !!(pf && pf.exact), hasPrice: !!pf });
     });
-    const cash = Number(cashSnapshots[date] && cashSnapshots[date][name]) || 0;
+    let cash = Number(cashSnapshots[date] && cashSnapshots[date][name]) || 0;
+    if(!(cashSnapshots[date] && cashSnapshots[date][name] !== undefined)){
+      const prev = Object.keys(cashSnapshots).filter(d=> d < date && cashSnapshots[d] && cashSnapshots[d][name] !== undefined).sort();
+      if(prev.length) cash = Number(cashSnapshots[prev[prev.length-1]][name]) || 0;
+    }
     accounts[name] = { principal:0, invested, valuation, cash, missing, stale, count };
   });
   return { accounts, rows, detail, hasData: hasValuationData(date) };
@@ -1530,7 +1508,7 @@ function safeNewChart(canvasId, config){
 try{
 
 /* ============================================================
-   STATIC CHARTS (full history, unaffected by 기준일)
+   STATIC CHARTS (full history, unaffected by 조회일)
    ============================================================ */
 trendChartInst = safeNewChart('trendChart', {
   type:'line',
@@ -1630,20 +1608,17 @@ function renderDashboard(requestedIso){
   document.getElementById('dashboardEmptyState').style.display = 'none';
   document.getElementById('dashboardContent').style.display = '';
 
-  const snap = nearestSnapshot(requestedIso);
+  const snap = requestedIso;
   currentSnapshotDate = snap;
   currentHoldings = getHoldingsForDate(snap);
   currentAccounts = getAccountsForDate(snap);
 
   const hint = document.getElementById('dateHint');
-  if(hint) hint.textContent = `등록된 기준일 범위: ${fmtDot(dates[0])} ~ ${fmtDot(dates[dates.length-1])} · 범위 밖 날짜는 가장 가까운 기준일로 표시됩니다`;
+  if(hint) hint.textContent = `조회 가능 범위: ${fmtDot(dates[0])} ~ ${fmtDot(dates[dates.length-1])} · 원하는 날짜를 선택하면 그 날짜 기준으로 계산됩니다`;
 
   const note = document.getElementById('dateNote');
-  if(snap !== requestedIso){
-    note.innerHTML = `<span class="live-dot on"></span>선택 기준일 ${fmtDot(requestedIso)} → 가장 가까운 스냅샷 ${fmtDot(snap)} 표시`;
-  } else {
-    note.innerHTML = `<span class="live-dot on"></span>표시 데이터: ${fmtDot(snap)} 스냅샷 (선택 기준일과 일치)`;
-  }
+  const vd = latestValuationDate(snap);
+  note.innerHTML = `<span class="live-dot on"></span>${fmtDot(snap)} 기준` + (vd ? ` · 최근 평가금 입력 ${fmtDot(vd)}` : ' · 평가금 미입력(매수 원가 기준)');
   document.querySelectorAll('.hero-num, .hero-side').forEach(el=>{
     el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
   });
@@ -1785,8 +1760,8 @@ function renderPrincipalPage(){
     document.getElementById('principalSummary').innerHTML = `
       <div class="stat-card"><div class="label">전체 항목 수</div><div class="value">0건</div></div>
       <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${principalEntries.length}건</div></div>
-      <div class="stat-card"><div class="label">현재 대시보드 기준일</div><div class="value" style="font-size:16px;">–</div></div>
-      <div class="stat-card"><div class="label">기준일 범위</div><div class="value" style="font-size:16px;">–</div></div>
+      <div class="stat-card"><div class="label">현재 대시보드 조회일</div><div class="value" style="font-size:16px;">–</div></div>
+      <div class="stat-card"><div class="label">표시 기간</div><div class="value" style="font-size:16px;">–</div></div>
     `;
     return;
   }
@@ -1798,10 +1773,10 @@ function renderPrincipalPage(){
       const acctData = getAccountsForDate(dateKey)[name];
       const current = getPrincipal(name, dateKey);
       const totalVal = acctData.valuation + acctData.cash;
-      const ret = current ? ((totalVal-current)/current*100) : 0;
+      const ret = (current && totalVal) ? ((totalVal-current)/current*100) : 0;
       const isCurrent = dateKey === currentSnapshotDate;
       const dateCell = idx===0
-        ? `<span class="date-link" data-date="${dateKey}" style="cursor:pointer;color:${isCurrent?'var(--gold)':'var(--ink)'};font-family:var(--mono);text-decoration:underline dotted;">${fmtDot(dateKey)}</span> <button class="btn-danger" data-remove-date="${dateKey}" title="이 기준일 삭제" style="margin-left:4px;">✕</button>`
+        ? `<span class="date-link" data-date="${dateKey}" style="cursor:pointer;color:${isCurrent?'var(--gold)':'var(--ink)'};font-family:var(--mono);text-decoration:underline dotted;">${fmtDot(dateKey)}</span>`
         : '';
       rowsHtml.push(`<tr style="${isCurrent?'background:var(--card-hi);':''}">
         <td>${dateCell}</td>
@@ -1816,8 +1791,8 @@ function renderPrincipalPage(){
   document.getElementById('principalSummary').innerHTML = `
     <div class="stat-card"><div class="label">전체 항목 수</div><div class="value">${datesDesc.length * getAccountNames().length}건</div></div>
     <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${principalEntries.length}건</div></div>
-    <div class="stat-card"><div class="label">현재 대시보드 기준일</div><div class="value" style="font-size:16px;">${fmtDot(currentSnapshotDate)}</div></div>
-    <div class="stat-card"><div class="label">기준일 범위</div><div class="value" style="font-size:16px;">${fmtDot(datesDesc[datesDesc.length-1])} ~ ${fmtDot(datesDesc[0])}</div></div>
+    <div class="stat-card"><div class="label">현재 대시보드 조회일</div><div class="value" style="font-size:16px;">${fmtDot(currentSnapshotDate)}</div></div>
+    <div class="stat-card"><div class="label">표시 기간</div><div class="value" style="font-size:16px;">${fmtDot(datesDesc[datesDesc.length-1])} ~ ${fmtDot(datesDesc[0])}</div></div>
   `;
 
   tbody.querySelectorAll('.date-link').forEach(el=>{
@@ -1825,18 +1800,6 @@ function renderPrincipalPage(){
       dateInput.value = el.dataset.date;
       triggerRender();
       document.querySelector('.nav-item[data-page="dashboard"]').click();
-    });
-  });
-  tbody.querySelectorAll('[data-remove-date]').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const d = btn.dataset.removeDate;
-      if(!confirm(`${fmtDot(d)} 기준일을 삭제할까요? (이 기준일 표시만 삭제되며, 입출금 내역은 그대로 유지됩니다)`)) return;
-      customDates = customDates.filter(x=>x!==d);
-      localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-      scheduleAutoPush();
-      renderPrincipalPage();
-      triggerRender();
     });
   });
 }
@@ -1872,74 +1835,6 @@ function renderPrincipalEntryTable(){
   }
 }
 try{ renderPrincipalEntryTable(); }catch(e){ console.error('initial renderPrincipalEntryTable failed:', e); }
-
-function generateDateRange(startISO, endISO, stepMonths){
-  const dates = [];
-  const start = new Date(startISO+'T00:00:00');
-  const end = new Date(endISO+'T00:00:00');
-  if(isNaN(start) || isNaN(end) || start > end) return [];
-  const targetDay = start.getDate();
-  let monthOffset = 0;
-  let d = start;
-  while(d <= end){
-    dates.push(toLocalISO(d));
-    monthOffset += stepMonths;
-    const next = new Date(start.getFullYear(), start.getMonth() + monthOffset, 1);
-    const daysInNext = new Date(next.getFullYear(), next.getMonth()+1, 0).getDate();
-    next.setDate(Math.min(targetDay, daysInNext));
-    d = next;
-  }
-  if(dates[dates.length-1] !== endISO) dates.push(endISO);
-  return dates;
-}
-
-document.getElementById('generateRange').addEventListener('click', ()=>{
-  const start = document.getElementById('rangeStartDate').value;
-  const end = document.getElementById('rangeEndDate').value;
-  const step = parseInt(document.getElementById('rangeInterval').value, 10);
-  if(!start || !end){ alert('시작일과 종료일을 모두 선택해주세요.'); return; }
-  if(start > end){ alert('종료일은 시작일보다 이후여야 합니다.'); return; }
-  const range = generateDateRange(start, end, step);
-  if(range.length === 0){ alert('생성된 날짜가 없습니다. 날짜를 다시 확인해주세요.'); return; }
-  if(customDates.length > 0 && !confirm(`기존에 설정된 기준일 ${customDates.length}건이 모두 새 범위(${range.length}건)로 교체됩니다. (입출금 내역은 유지됩니다) 계속할까요?`)) return;
-  customDates = range;
-  localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-  scheduleAutoPush();
-  renderPrincipalPage();
-  dateInput.value = range[range.length-1];
-  triggerRender();
-  document.getElementById('rangePreview').textContent = `${range.length}개 기준일 생성됨: ${range.map(fmtDot).join(', ')}`;
-});
-
-document.getElementById('clearAllDates').addEventListener('click', ()=>{
-  if(customDates.length === 0){ alert('삭제할 기준일이 없습니다.'); return; }
-  if(!confirm('설정된 모든 기준일을 삭제할까요? (입출금 내역은 유지됩니다) 이 작업은 되돌릴 수 없습니다.')) return;
-  customDates = [];
-  localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-  scheduleAutoPush();
-  renderPrincipalPage();
-  triggerRender();
-  document.getElementById('rangePreview').textContent = '';
-});
-
-document.getElementById('addPrincipalDate').addEventListener('click', ()=>{
-  const input = document.getElementById('newPrincipalDate');
-  const d = input.value;
-  if(!d){ alert('추가할 날짜를 선택해주세요.'); return; }
-  if(!getSnapshotDates().includes(d)){
-    customDates.push(d);
-    localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-    scheduleAutoPush();
-  }
-  renderPrincipalPage();
-  // reflect the newly added date on the dashboard's date range immediately
-  dateInput.value = d;
-  triggerRender();
-});
-document.getElementById('addPrincipalDateToday').addEventListener('click', ()=>{
-  document.getElementById('newPrincipalDate').value = toLocalISO(new Date());
-  document.getElementById('addPrincipalDate').click();
-});
 
 document.getElementById('peDate').value = toLocalISO(new Date());
 
@@ -3119,10 +3014,6 @@ function saveValuation(){
   localStorage.setItem('cashSnapshots', JSON.stringify(cashSnapshots));
   if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
 }
-function saveCustomDates(){
-  localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
-  if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
-}
 // Everything that reads valuations is re-rendered through here.
 function refreshAfterValuation(){
   const run = fn => { try{ if(typeof fn === 'function') fn(); }catch(e){ console.error('valuation refresh failed:', e); } };
@@ -3132,11 +3023,6 @@ function refreshAfterValuation(){
   run(window.renderRetirementPage);
 }
 function lastDayOf(year, monthIndex){ return toLocalISO(new Date(year, monthIndex + 1, 0)); }
-function addBaseDate(d){
-  if(!d) return false;
-  if(getSnapshotDates().includes(d)) return false;
-  customDates.push(d); saveCustomDates(); return true;
-}
 function priceInputsFor(date){
   // every code held by any account on that date → { code, name, perAcct:[{account, qty}], totalQty, avgCost }
   const net = computeNetHoldings(date), byCode = new Map();
@@ -3153,10 +3039,12 @@ function priceInputsFor(date){
 function renderValDateSelect(){
   const sel = vEl('valDate');
   const dates = getSnapshotDates().slice().reverse();
-  if(!dates.includes(valDate)) valDate = dates.length ? dates[0] : null;
+  if(!dates.length) dates.push(toLocalISO(new Date()));
+  if(valDate && !dates.includes(valDate)){ dates.push(valDate); dates.sort().reverse(); }
+  if(!valDate || !dates.includes(valDate)) valDate = dates[0];
   sel.innerHTML = dates.length
     ? dates.map(d=>`<option value="${d}">${fmtDot(d)}${hasValuationData(d) ? ' ✓' : ''}</option>`).join('')
-    : '<option value="">기준일 없음</option>';
+    : '<option value="">날짜 없음</option>';
   if(valDate) sel.value = valDate;
 }
 
@@ -3168,9 +3056,9 @@ function renderValuationPage(){
   const typing = active && active.tagName === 'INPUT' && (priceBody.contains(active) || acctBody.contains(active));
 
   if(!valDate){
-    vEl('valPriceSub').textContent = '기준일을 먼저 추가해주세요 (위의 "말일 추가" 버튼)';
+    vEl('valPriceSub').textContent = '날짜를 선택해주세요';
     priceBody.innerHTML = ''; acctBody.innerHTML = ''; totalRow.innerHTML = '';
-    const e = vEl('valPriceEmpty'); e.style.display = 'block'; e.textContent = '기준일이 없습니다. 위에서 기준일을 추가하거나 엑셀을 업로드해주세요.';
+    const e = vEl('valPriceEmpty'); e.style.display = 'block'; e.textContent = '날짜를 선택하거나 엑셀을 업로드해주세요.';
     renderValStatus(); return;
   }
   vEl('valPriceSub').textContent = `${fmtDot(valDate)} 기준`;
@@ -3262,7 +3150,7 @@ function renderValStatus(){
   body.querySelectorAll('[data-val-go]').forEach(el=> el.addEventListener('click', ()=>{ valDate = el.dataset.valGo; renderValuationPage(); }));
   body.querySelectorAll('[data-val-del]').forEach(btn=> btn.addEventListener('click', ()=>{
     const d = btn.dataset.valDel;
-    if(!confirm(`${fmtDot(d)} 기준일에 입력한 단가·예수금을 모두 삭제할까요? (기준일 자체는 유지됩니다)`)) return;
+    if(!confirm(`${fmtDot(d)}에 입력한 단가·예수금을 모두 삭제할까요?`)) return;
     delete priceSnapshots[d]; delete cashSnapshots[d];
     saveValuation(); refreshAfterValuation();
   }));
@@ -3272,7 +3160,7 @@ function renderValStatus(){
 vEl('valDate').addEventListener('change', ()=>{ valDate = vEl('valDate').value || null; renderValuationPage(); });
 function addDateAndSelect(d){
   if(!d){ alert('날짜를 선택해주세요.'); return; }
-  addBaseDate(d); valDate = d; refreshAfterValuation();
+  valDate = d; refreshAfterValuation();
 }
 vEl('valAddDate').addEventListener('click', ()=>{ addDateAndSelect(vEl('valNewDate').value); vEl('valNewDate').value = ''; });
 vEl('valLastMonthEnd').addEventListener('click', ()=>{ const t = new Date(); addDateAndSelect(lastDayOf(t.getFullYear(), t.getMonth() - 1)); });
@@ -3321,7 +3209,7 @@ valBtn.addEventListener('click', async ()=>{
       const isCash = account && getAccountNames().includes(account) && String(cashRaw).trim() !== '' && cash >= 0;
       if(!date || (!isPrice && !isCash)){ skipped++; if(skipNotes.length < 3) skipNotes.push(`${i+2}행`); return; }
 
-      if(addBaseDate(date)) newDates++;
+      
       if(isPrice){ (priceSnapshots[date] = priceSnapshots[date] || {})[code] = price; priceCount++; }
       if(isCash){
         if(cash > 0){ (cashSnapshots[date] = cashSnapshots[date] || {})[account] = cash; }
@@ -3332,7 +3220,7 @@ valBtn.addEventListener('click', async ()=>{
     });
 
     if(priceCount || cashCount){ saveValuation(); if(lastDate) valDate = lastDate; refreshAfterValuation(); }
-    status.textContent = `업로드 완료 — 단가 ${priceCount}건, 예수금 ${cashCount}건` + (newDates ? `, 새 기준일 ${newDates}건 추가` : '') +
+    status.textContent = `업로드 완료 — 단가 ${priceCount}건, 예수금 ${cashCount}건` +
       `, 형식 오류로 제외 ${skipped}건` + (skipped ? ` (${skipNotes.join(', ')}${skipped > skipNotes.length ? ' 등' : ''})` : '');
     status.style.color = (priceCount || cashCount) ? 'var(--up)' : 'var(--down)';
     valFile.value = ''; valBtn.disabled = true;
@@ -3344,7 +3232,7 @@ valBtn.addEventListener('click', async ()=>{
 
 vEl('valTemplateBtn').addEventListener('click', ()=>{
   const acct = getAccountNames()[0] || '개인연금';
-  const csv = '﻿' + ['기준일,종목코드,종목명,단가,계좌,예수금',
+  const csv = '﻿' + ['날짜,종목코드,종목명,단가,계좌,예수금',
     '2026-09-30,360750,TIGER 미국S&P500,18500,,',
     '2026-09-30,005930,삼성전자,71000,,',
     `2026-09-30,,,,${acct},50000`].join('\r\n');
@@ -3601,7 +3489,7 @@ document.getElementById('addCategory').addEventListener('click', ()=>{
 const GOOGLE_CLIENT_ID = '48865465302-osuijlbusfmfit9ju16uuqlo8nb19smf.apps.googleusercontent.com'; // 가계부(my-budget)와 같은 저장소/주소에 올리면 그 앱에서 쓰던 클라이언트 ID를 그대로 재사용할 수 있습니다.
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME = 'asset-dashboard-sync.json';
-const SYNC_KEYS = ['principalEntries','customPrincipalDates','transactions','userDividends','userStockRegistry','retirementPlan','priceSnapshots','cashSnapshots','categoryList','accountList','pageOrder'];
+const SYNC_KEYS = ['principalEntries','transactions','userDividends','userStockRegistry','retirementPlan','priceSnapshots','cashSnapshots','categoryList','accountList','pageOrder'];
 
 let driveAccessToken = null;
 let driveFileId = localStorage.getItem('driveFileId') || null;
