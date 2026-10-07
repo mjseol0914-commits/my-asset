@@ -249,10 +249,16 @@
   .icon-btn{ font-family:var(--mono); font-size:13px; padding:5px 10px; border-radius:7px; border:1px solid var(--line); background:transparent; color:var(--ink-dim); cursor:pointer; }
   .icon-btn:hover{ border-color:var(--gold-dim); color:var(--ink); }
   .icon-btn:disabled{ opacity:.3; cursor:not-allowed; }
+
+.stock-dd{position:absolute;left:0;right:0;top:100%;margin-top:2px;max-height:240px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.12);}
+.stock-dd-item{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;font-size:13px;cursor:pointer;}
+.stock-dd-item .c{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);}
+.stock-dd-item:hover,.stock-dd-item.on{background:var(--card-hi);}
 </style>
 </head>
 <body>
 
+<datalist id="knownStockNames"></datalist>
 <div class="app">
 
   <!-- ================= SIDEBAR ================= -->
@@ -517,7 +523,7 @@
         <div class="wrap">
           <div class="eyebrow">Holdings Registry</div>
           <h2>종목 관리</h2>
-          <p>계좌별로 보유(또는 관리하고 싶은) 종목을 미리 등록해둘 수 있습니다. 등록한 종목은 배당금 등록, 월말 보유 관리의 종목코드 자동조회에 즉시 반영됩니다.</p>
+          <p>계좌별로 보유(또는 관리하고 싶은) 종목을 직접 추가·삭제합니다. 종목명이나 코드 일부를 입력하면 후보가 검색되며(전체 종목 목록은 설정 &gt; 종목 일괄등록에서 올립니다), 등록한 종목은 월말 보유·배당금 입력에서도 바로 검색됩니다.</p>
         </div>
       </div>
       <div class="wrap">
@@ -528,12 +534,12 @@
                 <label>계좌</label>
                 <select id="regAccount"></select>
               </div>
+              <div class="field"><label>종목명</label><input type="text" id="regName" placeholder="종목명 또는 코드 일부를 입력해 검색"></div>
               <div class="field">
                 <label>종목코드</label>
-                <input type="text" id="regCode" placeholder="예: 360750">
+                <input type="text" id="regCode" placeholder="처음 입력하는 종목만 입력">
                 <div id="regCodeStatus" style="font-family:var(--mono);font-size:10.5px;margin-top:4px;min-height:13px;"></div>
               </div>
-              <div class="field"><label>종목명</label><input type="text" id="regName" placeholder="종목코드 입력 시 자동 조회"></div>
               <div class="field">
                 <label>자산군</label>
                 <select id="regCategory"></select>
@@ -545,6 +551,7 @@
             </div>
           </div>
         </section>
+
 
         <section>
           <div class="summary-strip" id="regSummary"></div>
@@ -585,12 +592,12 @@
                 <label>계좌</label>
                 <select id="txAccount"></select>
               </div>
+              <div class="field"><label>종목명</label><input type="text" id="txName" placeholder="종목명만 입력해도 코드가 따라옵니다"></div>
               <div class="field">
                 <label>종목코드</label>
-                <input type="text" id="txCode" placeholder="예: 360750">
+                <input type="text" id="txCode" placeholder="처음 입력하는 종목만 입력">
                 <div id="txCodeStatus" style="font-family:var(--mono);font-size:10.5px;margin-top:4px;min-height:13px;"></div>
               </div>
-              <div class="field"><label>종목명</label><input type="text" id="txName" placeholder="종목코드 입력 시 자동 조회"></div>
               <div class="field"><label>수량 (전량 매도 = 0)</label><input type="number" id="txQty" min="0" step="1"></div>
               <div class="field"><label>투자금 합계 (원)</label><input type="number" id="txInvested" min="0" step="1" placeholder="총 투자금"></div>
             </div>
@@ -609,7 +616,7 @@
           </div>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
-              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자·기준일), <b>계좌</b>, <b>종목코드</b>, <b>종목명</b>(비워두면 코드로 자동 조회), <b>수량</b>(0이면 전량 매도), <b>투자금</b>(또는 투자금액·매수금액·매입금액). 계좌명은 <span id="txUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자·기준일), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(이미 입력해 본 종목이면 종목명만 있어도 코드가 자동으로 채워집니다), <b>수량</b>(0이면 전량 매도), <b>투자금</b>(또는 투자금액·매수금액·매입금액). 계좌명은 <span id="txUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
             <div class="form-grid" style="grid-template-columns:auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
@@ -684,14 +691,10 @@
                 <label>계좌</label>
                 <select id="divAccount"></select>
               </div>
+              <div class="field"><label>종목명</label><input type="text" id="divNameCustom" placeholder="종목명만 입력해도 코드가 따라옵니다"></div>
               <div class="field">
-                <label>종목명</label>
-                <select id="divStockSelect"></select>
-                <input type="text" id="divNameCustom" placeholder="종목명 직접 입력" style="display:none;margin-top:6px;">
-              </div>
-              <div class="field">
-                <label>종목코드</label>
-                <input type="text" id="divCode" placeholder="계좌·종목 선택 시 자동 입력" readonly>
+                <label>종목코드 (선택)</label>
+                <input type="text" id="divCode" placeholder="처음 입력하는 종목만 (선택)">
                 <div id="divCodeStatus" style="font-family:var(--mono);font-size:10.5px;margin-top:4px;min-height:13px;"></div>
               </div>
               <div class="field"><label>배당금(세후)</label><input type="number" id="divAmount" min="0" step="1" placeholder="원"></div>
@@ -1032,6 +1035,25 @@
 
         <section>
           <div class="sec-head">
+            <div class="sec-title">종목 일괄등록</div>
+            <div class="sec-sub">종목명 검색용 전체 목록 (계좌 없이)</div>
+          </div>
+          <div class="form-card">
+            <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 14px;">
+              엑셀/CSV의 첫 행을 머리글로 두고 <b>종목코드</b>, <b>종목명</b> 열을 넣어 올리면(<b>시장</b>, <b>구분</b> 열은 있으면 함께 저장) 월말 보유·종목 관리·배당금 입력에서 종목명/코드 일부만 쳐도 후보가 검색됩니다. 같은 종목코드는 새 파일 내용으로 갱신되고, 파일에 없는 기존 종목은 그대로 둡니다. 계좌별 보유 종목은 <b>종목 관리</b>에서 직접 추가·삭제합니다.
+            </p>
+            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
+              <div class="field" style="min-width:220px;"><label>파일 선택</label><input type="file" id="masterFileInput" accept=".xlsx,.xls,.csv"></div>
+              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-primary" id="masterUploadBtn" type="button" disabled>업로드 실행</button></div>
+              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn" id="masterClearBtn" type="button">전체 목록 비우기</button></div>
+            </div>
+            <div id="masterCount" style="margin-top:12px;font-size:12.5px;color:var(--ink-dim);"></div>
+            <div id="masterUploadStatus" style="margin-top:8px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sec-head">
             <div class="sec-title">자산군 관리</div>
             <div class="sec-sub">자산군 · 순서 · 색상</div>
           </div>
@@ -1115,35 +1137,6 @@ try{
    STATIC DATA
    ============================================================ */
 
-// asset code -> {name, category}
-const CATALOG = {
-  "133690":{name:"TIGER 미국나스닥100",cat:"지수추종"},
-  "360750":{name:"TIGER 미국S&P500",cat:"지수추종"},
-  "379810":{name:"KODEX 미국나스닥100",cat:"지수추종"},
-  "368590":{name:"RISE 미국나스닥100",cat:"지수추종"},
-  "474220":{name:"TIGER 미국테크TOP10타겟커버드콜",cat:"테마"},
-  "381170":{name:"TIGER 미국테크TOP10 INDXX",cat:"테마"},
-  "497570":{name:"TIGER 미국필라델피아AI반도체나스닥",cat:"테마"},
-  "494670":{name:"TIGER 조선TOP10",cat:"테마"},
-  "449450":{name:"PLUS K방산",cat:"테마"},
-  "434730":{name:"HANARO 원자력iSelect",cat:"테마"},
-  "381180":{name:"TIGER 미국필라델피아반도체나스닥",cat:"테마"},
-  "458730":{name:"TIGER 미국배당다우존스",cat:"배당주"},
-  "489250":{name:"KODEX 미국배당다우존스",cat:"배당주"},
-  "161510":{name:"PLUS 고배당주",cat:"배당주"},
-  "458760":{name:"TIGER 미국배당다우존스타겟커버드콜2호",cat:"배당주"},
-  "435420":{name:"TIGER 미국나스닥100채권혼합50",cat:"채권혼합"},
-  "490490":{name:"SOL 미국배당미국채혼합50",cat:"채권혼합"},
-  "438080":{name:"ACE 미국S&P500채권혼합액티브",cat:"채권혼합"},
-  "448540":{name:"ACE 엔비디아채권혼합블룸버그",cat:"채권혼합"},
-  "438100":{name:"ACE 미국나스닥100채권혼합액티브",cat:"채권혼합"},
-  "453850":{name:"ACE 미국30년국채액티브(H)",cat:"채권"},
-  "273130":{name:"KODEX 종합채권(AA-이상)액티브",cat:"채권"},
-  "497880":{name:"SOL CD금리&머니마켓액티브",cat:"파킹"},
-  "475630":{name:"TIGER CD1년금리액티브(합성)",cat:"파킹"},
-  "0064K0":{name:"KODEX 금액티브",cat:"원자재"},
-  "0066W0":{name:"SOL 국제금",cat:"원자재"},
-};
 
 // User-manageable, ordered category list (name + color). Seeded from the original defaults
 // on first run; after that, entirely driven by what's saved (order matters for 종목 관리's
@@ -1208,6 +1201,8 @@ const BASE_SNAPSHOT_DATES = Object.keys(holdingsByDate).sort();
 // 기준일 제도는 폐지됨: 날짜 목록은 입력된 데이터에서 자동으로 만들어진다. (예전 저장값은 정리)
 try{ localStorage.removeItem('customPrincipalDates'); }catch(e){}
 
+let stockMaster = [];
+try{ stockMaster = JSON.parse(localStorage.getItem('stockMaster') || '[]'); if(!Array.isArray(stockMaster)) stockMaster = []; }catch(e){ stockMaster = []; }
 let userStockRegistry = [];
 try{ userStockRegistry = JSON.parse(localStorage.getItem('userStockRegistry') || '[]'); }catch(e){ userStockRegistry = []; }
 
@@ -1273,28 +1268,90 @@ function toLocalISO(d){
   return `${y}-${m}-${day}`;
 }
 
-// Resolve a stock name from its code: local CATALOG first (instant, reliable),
-// then a best-effort live lookup (depends on network/CORS availability; fails silently).
-async function lookupStockName(codeRaw){
-  const code = (codeRaw||'').trim().toUpperCase();
-  if(!code) return null;
-  const registered = (userStockRegistry||[]).find(s=> s.code.toUpperCase()===code);
-  if(registered) return { name: registered.name, source:'registry' };
-  if(CATALOG[code]) return { name: CATALOG[code].name, source:'local' };
-  try{
-    const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(), 4000);
-    const res = await fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(code)}&quotesCount=5&newsCount=0`, { signal: controller.signal, mode:'cors' });
-    clearTimeout(timer);
-    if(!res.ok) return null;
-    const data = await res.json();
-    const quotes = (data && data.quotes) || [];
-    const match = quotes.find(q=> q.symbol && q.symbol.toUpperCase().startsWith(code)) || quotes[0];
-    const name = match && (match.shortname || match.longname);
-    return name ? { name, source:'live' } : null;
-  }catch(e){
-    return null;
-  }
+// 종목명 ↔ 종목코드 자동 채움: 앱에 내장된 목록이나 인터넷 조회는 쓰지 않고,
+// 이미 입력해 본 종목(종목 관리 등록 + 월말 보유 + 배당금 내역)에서만 찾는다.
+const normStockName = n => String(n === undefined || n === null ? '' : n).replace(/\s+/g,'').toLowerCase();
+function getKnownStocks(){
+  const byName = new Map(), byCode = new Map(), mine = new Set();
+  const add = (code, name, tag, isMine)=>{
+    name = String(name || '').trim(); code = String(code || '').trim().toUpperCase();
+    if(!name || !code || code === '-' || name === '(종목명 미확인)') return;
+    const it = { code, name, tag: tag || '' };
+    byName.set(normStockName(name), it); byCode.set(code, it);
+    if(isMine) mine.add(code);
+  };
+  (stockMaster || []).forEach(e=> add(e.c, e.n, [e.m, e.t].filter(Boolean).join(' · '), false));
+  (holdingEntries || []).forEach(e=> add(e.code, e.name, '', true));
+  (userDividends || []).forEach(e=> add(e.code, e.name, '', true));
+  (userStockRegistry || []).forEach(e=> add(e.code, e.name, '', true)); // 직접 등록한 이름이 가장 우선
+  return { byName, byCode, mine };
+}
+function findStockByName(name){ return getKnownStocks().byName.get(normStockName(name)) || null; }
+function findStockByCode(code){ return getKnownStocks().byCode.get(String(code || '').trim().toUpperCase()) || null; }
+function refreshKnownStockList(){
+  const dl = document.getElementById('knownStockNames'); if(!dl) return;
+  const names = Array.from(getKnownStocks().byName.values()).sort((a,b)=> a.name.localeCompare(b.name,'ko'));
+  dl.innerHTML = names.map(n=>`<option value="${String(n.name).replace(/"/g,'&quot;')}">${n.code}</option>`).join('');
+}
+// 종목명 입력칸 + 종목코드 입력칸을 연결: 이름을 입력하면 코드가 따라오고, 코드를 먼저 입력하면 이름이 채워진다.
+function wireStockPair(nameId, codeId, statusId, codeOptional){
+  const nameEl = document.getElementById(nameId), codeEl = document.getElementById(codeId), st = document.getElementById(statusId);
+  if(!nameEl || !codeEl) return;
+  nameEl.removeAttribute('list');
+  nameEl.setAttribute('autocomplete', 'off');
+  // 자체 검색 드롭다운: 종목명/코드 일부만 쳐도 "종목명 · 코드" 후보가 뜨고, 클릭(또는 ↑↓ Enter)으로 선택
+  const host = nameEl.parentElement; host.style.position = 'relative';
+  const dd = document.createElement('div'); dd.className = 'stock-dd'; dd.style.display = 'none'; host.appendChild(dd);
+  let ddItems = [], ddIdx = -1;
+  const hideDD = ()=>{ dd.style.display = 'none'; ddIdx = -1; };
+  const pick = (it)=>{ nameEl.value = it.name; codeEl.value = it.code; codeEl.dataset.auto = '1'; hideDD(); say('✓ 종목코드 자동 입력 (' + it.code + ')', true); };
+  const paintIdx = ()=>{ [...dd.children].forEach((c,i)=> c.classList.toggle('on', i===ddIdx)); };
+  const showDD = ()=>{
+    const q = normStockName(nameEl.value);
+    const ks = getKnownStocks();
+    const all = Array.from(ks.byCode.values()).sort((a,b)=> a.name.localeCompare(b.name,'ko'));
+    const raw = nameEl.value.trim().toLowerCase();
+    let hits = q ? all.filter(x=> normStockName(x.name).includes(q) || x.code.toLowerCase().includes(raw)) : all.filter(x=> ks.mine.has(x.code));
+    // 이름이 검색어로 시작하는 종목을 먼저, 내가 쓴 종목을 그 다음으로
+    if(q) hits.sort((a,b)=> (normStockName(b.name).startsWith(q)-normStockName(a.name).startsWith(q)) || (ks.mine.has(b.code)-ks.mine.has(a.code)));
+    ddItems = hits.slice(0, 30);
+    if(!ddItems.length){ hideDD(); return; }
+    dd.innerHTML = ddItems.map((x,i)=>`<div class="stock-dd-item" data-i="${i}"><span>${x.name}</span><span class="c">${x.tag ? x.tag + ' · ' : ''}${x.code}</span></div>`).join('');
+    dd.style.display = 'block'; ddIdx = -1;
+    dd.querySelectorAll('.stock-dd-item').forEach(el=> el.addEventListener('mousedown', ev=>{ ev.preventDefault(); pick(ddItems[+el.dataset.i]); }));
+  };
+  nameEl.addEventListener('input', showDD);
+  nameEl.addEventListener('focus', showDD);
+  nameEl.addEventListener('blur', ()=> setTimeout(hideDD, 120));
+  nameEl.addEventListener('keydown', ev=>{
+    if(dd.style.display === 'none') return;
+    if(ev.key === 'ArrowDown'){ ev.preventDefault(); ddIdx = Math.min(ddItems.length-1, ddIdx+1); paintIdx(); }
+    else if(ev.key === 'ArrowUp'){ ev.preventDefault(); ddIdx = Math.max(0, ddIdx-1); paintIdx(); }
+    else if(ev.key === 'Enter' && ddIdx >= 0){ ev.preventDefault(); pick(ddItems[ddIdx]); }
+    else if(ev.key === 'Escape'){ hideDD(); }
+  });
+  const say = (msg, good)=>{ if(st){ st.textContent = msg; st.style.color = good ? 'var(--up)' : 'var(--ink-faint)'; } };
+  const fromName = ()=>{
+    const v = nameEl.value.trim();
+    if(!v){ if(codeEl.dataset.auto === '1'){ codeEl.value = ''; codeEl.dataset.auto = ''; } say('', false); return; }
+    const f = findStockByName(v);
+    if(f){
+      if(!codeEl.value.trim() || codeEl.dataset.auto === '1'){ codeEl.value = f.code; codeEl.dataset.auto = '1'; }
+      say('✓ 종목코드 자동 입력 (' + f.code + ')', true);
+    } else {
+      if(codeEl.dataset.auto === '1'){ codeEl.value = ''; codeEl.dataset.auto = ''; }
+      say(codeOptional ? '처음 입력하는 종목입니다 (코드는 선택)' : '처음 입력하는 종목입니다 — 종목코드를 한 번만 입력해주세요', false);
+    }
+  };
+  const fromCode = ()=>{
+    codeEl.dataset.auto = '';
+    const f = findStockByCode(codeEl.value);
+    if(f && !nameEl.value.trim()){ nameEl.value = f.name; say('✓ 종목명 자동 입력', true); }
+  };
+  nameEl.addEventListener('focus', refreshKnownStockList);
+  nameEl.addEventListener('input', fromName);
+  nameEl.addEventListener('change', fromName);
+  codeEl.addEventListener('input', fromCode);
 }
 
 
@@ -1319,6 +1376,7 @@ if(!Array.isArray(holdingEntries)) holdingEntries = [];
 // 은퇴 설계 page can reach it even if dashboard initialization fails.
 let userDividends = [];
 try{ userDividends = JSON.parse(localStorage.getItem('userDividends') || '[]'); }catch(e){ userDividends = []; }
+refreshKnownStockList();
 
 /* ============================================================
    월말 평가금 — data layer (no DOM; top level so getAccountsForDate,
@@ -1349,7 +1407,7 @@ function computeNetHoldings(asOf){
     if(!(qty > 1e-9)) return;
     const code = String(e.code).toUpperCase();
     const reg = (userStockRegistry||[]).find(s=> s.account === e.account && String(s.code).toUpperCase() === code);
-    const nm = reg ? reg.name : (CATALOG[code] ? CATALOG[code].name : (e.name || code));
+    const nm = reg ? reg.name : (e.name || code);
     (out[e.account] = out[e.account] || []).push({ code, name:nm, qty, invested: isFinite(inv) ? inv : 0 });
   });
   return out;
@@ -1628,7 +1686,7 @@ function computeAssetClasses(holdings){
   const map = {};
   holdings.forEach(h=>{
     const [acct,code,qty,avg,inv,cur,val,gain] = h;
-    const cat = (CATALOG[code]||{}).cat || ((userStockRegistry||[]).find(r=>String(r.code).toUpperCase()===String(code).toUpperCase())||{}).category || '기타';
+    const cat = ((userStockRegistry||[]).find(r=>String(r.code).toUpperCase()===String(code).toUpperCase())||{}).category || '기타';
     if(!map[cat]) map[cat] = {name:cat, invested:0, valuation:0, color: getCategoryColor(cat)};
     map[cat].invested += inv; map[cat].valuation += val;
   });
@@ -1781,7 +1839,7 @@ function renderHoldingsTable(filter){
       const tx = [...holdingEntries].reverse().find(t=> t.account===acct && String(t.code).toUpperCase()===String(code).toUpperCase() && t.name && t.name!=='(종목명 미확인)');
       return tx ? tx.name : code;
     })();
-    const meta = CATALOG[code] || {name:liveName};
+    const meta = {name:liveName};
     return `<tr>
       <td><span class="grp-badge" style="border-color:${ACCT_COLOR[acct]}55;color:${ACCT_COLOR[acct]}">${acct}</span></td>
       <td>${meta.name} <span class="name-code">${code}</span></td>
@@ -2038,26 +2096,7 @@ peUploadBtn.addEventListener('click', async ()=>{
    ============================================================ */
 document.getElementById('txDate').value = toLocalISO(new Date());
 
-let txLookupTimer = null;
-document.getElementById('txCode').addEventListener('input', (e)=>{
-  clearTimeout(txLookupTimer);
-  const code = e.target.value;
-  const status = document.getElementById('txCodeStatus');
-  const nameField = document.getElementById('txName');
-  if(!code.trim()){ status.textContent=''; return; }
-  status.textContent = '조회 중...'; status.style.color = 'var(--ink-faint)';
-  txLookupTimer = setTimeout(async ()=>{
-    const result = await lookupStockName(code);
-    if(result && result.name){
-      if(!nameField.value.trim()) nameField.value = result.name;
-      status.textContent = result.source==='registry' ? '✓ 자동 조회됨 (등록된 종목)' : result.source==='local' ? '✓ 자동 조회됨 (내장 목록)' : '✓ 자동 조회됨 (온라인)';
-      status.style.color = 'var(--up)';
-    } else {
-      status.textContent = '자동 조회 실패 — 종목명을 직접 입력해주세요';
-      status.style.color = 'var(--ink-faint)';
-    }
-  }, 500);
-});
+wireStockPair('txName', 'txCode', 'txCodeStatus', false);
 
 const txNum = v => { const n = parseFloat(String(v === undefined || v === null ? '' : v).replace(/[,\s원]/g,'')); return isNaN(n) ? NaN : n; };
 const txEsc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -2139,8 +2178,11 @@ renderTxTable(); renderTxSummary();
 document.getElementById('addTx').addEventListener('click', ()=>{
   const date = document.getElementById('txDate').value;
   const account = document.getElementById('txAccount').value;
-  const code = normTxCode(document.getElementById('txCode').value);
-  const name = document.getElementById('txName').value.trim();
+  let name = document.getElementById('txName').value.trim();
+  let code = normTxCode(document.getElementById('txCode').value);
+  if(!code && name){ const f = findStockByName(name); if(f) code = f.code; }
+  if(code && !name){ const f = findStockByCode(code); if(f) name = f.name; }
+  if(name && !code){ alert('처음 입력하는 종목은 종목코드를 한 번 입력해주세요. 다음부터는 종목명만 입력해도 코드가 자동으로 채워집니다.'); return; }
   const qty = txNum(document.getElementById('txQty').value);
   const invested = txNum(document.getElementById('txInvested').value);
   if(!date || !account || !code || !name || !(qty >= 0) || (qty > 0 && !(invested > 0))){
@@ -2149,9 +2191,9 @@ document.getElementById('addTx').addEventListener('click', ()=>{
   }
   upsertHolding({ id: Date.now() + Math.random(), date, account, code, name, qty, invested: qty > 0 ? invested : 0 });
   saveHoldingEntries();
-  document.getElementById('txCode').value=''; document.getElementById('txName').value='';
+  document.getElementById('txCode').value=''; document.getElementById('txCode').dataset.auto=''; document.getElementById('txName').value='';
   document.getElementById('txQty').value=''; document.getElementById('txInvested').value='';
-  document.getElementById('txCodeStatus').textContent='';
+  document.getElementById('txCodeStatus').textContent=''; refreshKnownStockList();
   renderTxTable(); renderTxSummary();
   if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
   if(typeof refreshAfterValuation === 'function') refreshAfterValuation();
@@ -2218,13 +2260,13 @@ txUploadBtn.addEventListener('click', async ()=>{
     let addedCount=0, skippedCount=0;
     const skipNotes = [];
     const parsed = [];
-    const toLookup = [];
-
     rows.forEach((row, idx)=>{
       const dateStr = normalizeExcelDate(pickField(row, TX_HEADER_MAP.date));
       let account = String(pickField(row, TX_HEADER_MAP.account)||'').trim();
-      const code = normTxCode(pickField(row, TX_HEADER_MAP.code));
+      let code = normTxCode(pickField(row, TX_HEADER_MAP.code));
       let name = String(pickField(row, TX_HEADER_MAP.name)||'').trim();
+      if(!code && name){ const f = findStockByName(name); if(f) code = f.code; }
+      if(code && !name){ const f = findStockByCode(code); if(f) name = f.name; }
       const qty = txNum(pickField(row, TX_HEADER_MAP.qty));
       const invested = txNum(pickField(row, TX_HEADER_MAP.invested));
 
@@ -2235,20 +2277,10 @@ txUploadBtn.addEventListener('click', async ()=>{
       if(!valid){ skippedCount++; if(skipNotes.length < 3) skipNotes.push(`${idx+2}행`); return; }
 
       const entry = { id: Date.now()+addedCount+Math.random(), date:dateStr, account, code, name, qty, invested: qty > 0 ? invested : 0 };
+      if(!entry.name) entry.name = entry.code;
       parsed.push(entry);
-      if(!name) toLookup.push(entry);
       addedCount++;
     });
-
-    let lookedUpCount = 0;
-    if(toLookup.length){
-      status.textContent = `${addedCount}건 확인됨 · 종목명 ${toLookup.length}건 자동 조회 중...`;
-      await Promise.all(toLookup.map(async entry=>{
-        const result = await lookupStockName(entry.code);
-        if(result && result.name){ entry.name = result.name; lookedUpCount++; }
-        else entry.name = '(종목명 미확인)';
-      }));
-    }
 
     if(parsed.length){
       parsed.forEach(upsertHolding);
@@ -2258,7 +2290,7 @@ txUploadBtn.addEventListener('click', async ()=>{
       if(typeof refreshAfterValuation === 'function') refreshAfterValuation();
     }
 
-    status.textContent = `업로드 완료 — 추가 ${addedCount}건` + (lookedUpCount ? ` (종목명 자동조회 ${lookedUpCount}건)` : '') + `, 형식 오류로 제외 ${skippedCount}건` + (skipNotes.length ? ` (${skipNotes.join(', ')}…)` : '');
+    status.textContent = `업로드 완료 — 추가 ${addedCount}건, 형식 오류로 제외 ${skippedCount}건` + (skipNotes.length ? ` (${skipNotes.join(', ')}…)` : '');
     status.style.color = addedCount ? 'var(--up)' : 'var(--down)';
     txFileInput.value = '';
     txUploadBtn.disabled = true;
@@ -2293,39 +2325,6 @@ const dividendBase = {
     2025:[0,0,0,0,0,0,0,0,0,0,0,0],
     2026:[0,0,0,0,0,0,0,0,0,0,0,0] },
 };
-
-// per-account list of stocks to offer in the dividend dropdown: union of any remaining base
-// holdings snapshots (currently empty) + every code the user has logged via 월말 보유 관리
-// + every code explicitly registered via 종목 관리. Recomputed on demand so it stays live.
-function computeAccountHoldings(){
-  const map = {};
-  getAccountNames().forEach(a=>{ map[a] = new Map(); });
-  Object.values(holdingsByDate).forEach(rows=>{
-    rows.forEach(row=>{
-      const [acct, code] = row;
-      if(!map[acct]) map[acct] = new Map();
-      const meta = CATALOG[code];
-      map[acct].set(code, meta ? meta.name : code);
-    });
-  });
-  (holdingEntries||[]).forEach(t=>{
-    if(!t.code || t.code === '-') return;
-    if(!map[t.account]) map[t.account] = new Map();
-    const meta = CATALOG[t.code];
-    map[t.account].set(t.code, meta ? meta.name : (t.name || t.code));
-  });
-  (userStockRegistry||[]).forEach(s=>{
-    if(!map[s.account]) map[s.account] = new Map();
-    map[s.account].set(s.code, s.name); // explicit registration wins over inferred names
-  });
-  const result = {};
-  getAccountNames().forEach(a=>{
-    result[a] = Array.from((map[a]||new Map()).entries())
-      .map(([code,name])=>({code,name}))
-      .sort((x,y)=>x.name.localeCompare(y.name,'ko'));
-  });
-  return result;
-}
 
 /* ============================================================
    HOLDINGS REGISTRY PAGE (종목 관리)
@@ -2382,38 +2381,64 @@ function renderRegistryPage(filter){
     return `<div class="stat-card"><div class="label">${a}</div><div class="value" style="color:${ACCT_COLOR[a]}">${count}건</div></div>`;
   }).join('');
 }
+
+
+/* 종목 일괄등록 (설정): 계좌 없는 종목명 검색용 전체 목록 */
+const MASTER_HEADER_MAP = { code:['종목코드','코드','code','itemcode'], name:['종목명','종목','name'], market:['시장','market'], type:['구분','종류','type'] };
+function renderMasterCount(){
+  const el = document.getElementById('masterCount'); if(!el) return;
+  el.textContent = stockMaster.length ? `현재 저장된 검색용 종목: ${stockMaster.length.toLocaleString()}개` : '저장된 검색용 종목이 없습니다.';
+}
+const masterFileInput = document.getElementById('masterFileInput');
+const masterUploadBtn = document.getElementById('masterUploadBtn');
+masterFileInput.addEventListener('change', ()=>{ masterUploadBtn.disabled = !masterFileInput.files.length; document.getElementById('masterUploadStatus').textContent=''; });
+masterUploadBtn.addEventListener('click', async ()=>{
+  const status = document.getElementById('masterUploadStatus');
+  const file = masterFileInput.files[0]; if(!file) return;
+  masterUploadBtn.disabled = true; status.style.color='var(--ink-dim)'; status.textContent='파일 읽는 중...';
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+    if(!rows.length){ status.textContent='업로드할 데이터가 없습니다. 첫 행이 머리글인지 확인해주세요.'; status.style.color='var(--down)'; masterUploadBtn.disabled=false; return; }
+    const map = new Map(stockMaster.map(e=>[String(e.c).toUpperCase(), e]));
+    let added=0, updated=0, bad=0; const notes=[];
+    rows.forEach((row, idx)=>{
+      const code = normTxCode(pickField(row, MASTER_HEADER_MAP.code));
+      const name = String(pickField(row, MASTER_HEADER_MAP.name)||'').trim();
+      if(!code || !name){ bad++; if(notes.length<3) notes.push((idx+2)+'행'); return; }
+      const rec = { c:code, n:name, m:String(pickField(row, MASTER_HEADER_MAP.market)||'').trim(), t:String(pickField(row, MASTER_HEADER_MAP.type)||'').trim() };
+      const key = code.toUpperCase();
+      if(map.has(key)) updated++; else added++;
+      map.set(key, rec);
+    });
+    stockMaster = Array.from(map.values());
+    localStorage.setItem('stockMaster', JSON.stringify(stockMaster));
+    scheduleAutoPush(); refreshKnownStockList(); renderMasterCount();
+    status.textContent = `업로드 완료 — 신규 ${added}건, 갱신 ${updated}건, 형식 오류 ${bad}건` + (notes.length?` (${notes.join(', ')}…)`:'');
+    status.style.color = (added+updated) ? 'var(--up)' : 'var(--down)';
+    masterFileInput.value=''; masterUploadBtn.disabled=true;
+  }catch(err){ console.error(err); status.textContent='업로드 중 오류가 발생했습니다: '+err.message; status.style.color='var(--down)'; masterUploadBtn.disabled=false; }
+});
+document.getElementById('masterClearBtn').addEventListener('click', ()=>{
+  if(!stockMaster.length) return;
+  if(!confirm('검색용 전체 종목 목록을 비울까요? (종목 관리·월말 보유·배당금에 입력한 내역은 그대로 유지됩니다)')) return;
+  stockMaster = []; localStorage.setItem('stockMaster', '[]'); scheduleAutoPush(); refreshKnownStockList(); renderMasterCount();
+  document.getElementById('masterUploadStatus').textContent='';
+});
+renderMasterCount();
 try{ renderRegistryPage('전체'); }catch(e){ console.error('initial renderRegistryPage failed:', e); }
 
-let regLookupTimer = null;
-document.getElementById('regCode').addEventListener('input', (e)=>{
-  clearTimeout(regLookupTimer);
-  const code = e.target.value;
-  const status = document.getElementById('regCodeStatus');
-  const nameField = document.getElementById('regName');
-  if(!code.trim()){ status.textContent=''; return; }
-  status.textContent = '조회 중...'; status.style.color = 'var(--ink-faint)';
-  regLookupTimer = setTimeout(async ()=>{
-    const result = await lookupStockName(code);
-    if(result && result.name){
-      if(!nameField.value.trim()) nameField.value = result.name;
-      status.textContent = result.source==='registry' ? '✓ 자동 조회됨 (등록된 종목)' : result.source==='local' ? '✓ 자동 조회됨 (내장 목록)' : '✓ 자동 조회됨 (온라인)';
-      status.style.color = 'var(--up)';
-      const catMeta = CATALOG[code.trim().toUpperCase()];
-      if(catMeta) document.getElementById('regCategory').value = catMeta.cat;
-    } else {
-      status.textContent = '자동 조회 실패 — 종목명을 직접 입력해주세요';
-      status.style.color = 'var(--ink-faint)';
-    }
-  }, 500);
-});
+wireStockPair('regName', 'regCode', 'regCodeStatus', false);
 
 document.getElementById('addReg').addEventListener('click', ()=>{
   const account = document.getElementById('regAccount').value;
-  const code = document.getElementById('regCode').value.trim();
   const name = document.getElementById('regName').value.trim();
+  let code = document.getElementById('regCode').value.trim();
+  if(!code && name){ const f = findStockByName(name); if(f) code = f.code; }
   const category = document.getElementById('regCategory').value;
   if(!code || !name){
-    alert('종목코드와 종목명을 모두 입력해주세요.');
+    alert('종목명과 종목코드를 입력해주세요. (이미 입력해 본 종목은 종목명만 입력해도 코드가 채워집니다)');
     return;
   }
   const dup = userStockRegistry.find(s=> s.account===account && s.code.toUpperCase()===code.toUpperCase());
@@ -2424,8 +2449,8 @@ document.getElementById('addReg').addEventListener('click', ()=>{
   userStockRegistry.push({ id: Date.now(), account, code, name, category, date: toLocalISO(new Date()) });
   localStorage.setItem('userStockRegistry', JSON.stringify(userStockRegistry));
   scheduleAutoPush();
-  document.getElementById('regCode').value=''; document.getElementById('regName').value='';
-  document.getElementById('regCodeStatus').textContent='';
+  document.getElementById('regCode').value=''; document.getElementById('regCode').dataset.auto=''; document.getElementById('regName').value='';
+  document.getElementById('regCodeStatus').textContent=''; refreshKnownStockList();
   renderRegistryPage();
   if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
   const toast = document.getElementById('regToast');
@@ -2624,86 +2649,27 @@ function renderDivUserTable(){
 
 document.getElementById('divDate').value = toLocalISO(new Date());
 
-const CUSTOM_STOCK_VALUE = '__custom__';
-
-function populateDivStockSelect(account){
-  const list = computeAccountHoldings()[account] || [];
-  const sel = document.getElementById('divStockSelect');
-  sel.innerHTML = list.map(h=>`<option value="${h.code}">${h.name} (${h.code})</option>`).join('')
-    + `<option value="${CUSTOM_STOCK_VALUE}">+ 직접 입력 (목록에 없는 종목)</option>`;
-  sel.value = list.length ? list[0].code : CUSTOM_STOCK_VALUE;
-  handleDivStockChange();
-}
-
-function handleDivStockChange(){
-  const sel = document.getElementById('divStockSelect');
-  const codeInput = document.getElementById('divCode');
-  const customInput = document.getElementById('divNameCustom');
-  const status = document.getElementById('divCodeStatus');
-  if(sel.value === CUSTOM_STOCK_VALUE){
-    codeInput.readOnly = false;
-    codeInput.value = '';
-    codeInput.placeholder = '종목코드 직접 입력';
-    customInput.style.display = '';
-  } else {
-    codeInput.readOnly = true;
-    codeInput.value = sel.value;
-    codeInput.placeholder = '계좌·종목 선택 시 자동 입력';
-    customInput.style.display = 'none';
-    customInput.value = '';
-  }
-  status.textContent = '';
-}
-
-let divLookupTimer = null;
-document.getElementById('divCode').addEventListener('input', (e)=>{
-  if(e.target.readOnly) return; // only relevant in custom-entry mode
-  clearTimeout(divLookupTimer);
-  const code = e.target.value;
-  const status = document.getElementById('divCodeStatus');
-  const nameField = document.getElementById('divNameCustom');
-  if(!code.trim()){ status.textContent=''; return; }
-  status.textContent = '조회 중...'; status.style.color = 'var(--ink-faint)';
-  divLookupTimer = setTimeout(async ()=>{
-    const result = await lookupStockName(code);
-    if(result && result.name){
-      if(!nameField.value.trim()) nameField.value = result.name;
-      status.textContent = result.source==='registry' ? '✓ 자동 조회됨 (등록된 종목)' : result.source==='local' ? '✓ 자동 조회됨 (내장 목록)' : '✓ 자동 조회됨 (온라인)';
-      status.style.color = 'var(--up)';
-    } else {
-      status.textContent = '자동 조회 실패 — 종목명을 직접 입력해주세요';
-      status.style.color = 'var(--ink-faint)';
-    }
-  }, 500);
-});
-
-document.getElementById('divAccount').addEventListener('change', e=> populateDivStockSelect(e.target.value));
-document.getElementById('divStockSelect').addEventListener('change', handleDivStockChange);
-populateDivStockSelect(document.getElementById('divAccount').value);
+// 종목명을 입력하면 코드가 따라온다 (코드는 선택). 계좌가 바뀌어도 입력값은 유지한다.
+function populateDivStockSelect(account){ refreshKnownStockList(); }
+wireStockPair('divNameCustom', 'divCode', 'divCodeStatus', true);
 
 document.getElementById('addDiv').addEventListener('click', ()=>{
   const date = document.getElementById('divDate').value;
   const account = document.getElementById('divAccount').value;
-  const sel = document.getElementById('divStockSelect');
   const amount = parseFloat(document.getElementById('divAmount').value);
   const memo = document.getElementById('divMemo').value.trim();
 
-  let code, name;
-  if(sel.value === CUSTOM_STOCK_VALUE){
-    code = document.getElementById('divCode').value.trim();
-    name = document.getElementById('divNameCustom').value.trim();
-  } else {
-    code = sel.value;
-    const meta = CATALOG[code];
-    name = meta ? meta.name : sel.options[sel.selectedIndex].textContent;
-  }
+  let code = document.getElementById('divCode').value.trim();
+  let name = document.getElementById('divNameCustom').value.trim();
+  if(!code && name){ const f = findStockByName(name); if(f) code = f.code; }
+  if(code && !name){ const f = findStockByCode(code); if(f) name = f.name; }
 
   if(!date || !amount || amount<=0){
     alert('지급일과 배당금(0보다 큰 금액)을 올바르게 입력해주세요.');
     return;
   }
   if(!name){
-    alert('종목명을 선택하거나 직접 입력해주세요.');
+    alert('종목명을 입력해주세요.');
     return;
   }
 
@@ -2711,8 +2677,8 @@ document.getElementById('addDiv').addEventListener('click', ()=>{
   localStorage.setItem('userDividends', JSON.stringify(userDividends));
   scheduleAutoPush();
   document.getElementById('divAmount').value=''; document.getElementById('divMemo').value='';
-  document.getElementById('divNameCustom').value='';
-  populateDivStockSelect(account);
+  document.getElementById('divNameCustom').value=''; document.getElementById('divCode').value=''; document.getElementById('divCode').dataset.auto=''; document.getElementById('divCodeStatus').textContent='';
+  refreshKnownStockList();
   renderDividendsPage(); refreshDividendDependents();
   const toast = document.getElementById('divToast');
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
@@ -2756,13 +2722,14 @@ divUploadBtn.addEventListener('click', async ()=>{
 
     let addedCount=0, skippedCount=0;
     const parsed = [];
-    const toLookup = [];
 
     rows.forEach(row=>{
       const dateStr = normalizeExcelDate(pickField(row, DIV_HEADER_MAP.date));
       let account = String(pickField(row, DIV_HEADER_MAP.account)||'').trim();
-      const code = String(pickField(row, DIV_HEADER_MAP.code)||'').trim();
+      let code = String(pickField(row, DIV_HEADER_MAP.code)||'').trim();
       let name = String(pickField(row, DIV_HEADER_MAP.name)||'').trim();
+      if(!code && name){ const f = findStockByName(name); if(f) code = f.code; }
+      if(code && !name){ const f = findStockByCode(code); if(f) name = f.name; }
       const amount = parseFloat(pickField(row, DIV_HEADER_MAP.amount));
       const memo = String(pickField(row, DIV_HEADER_MAP.memo)||'').trim();
 
@@ -2773,20 +2740,10 @@ divUploadBtn.addEventListener('click', async ()=>{
       if(!valid){ skippedCount++; return; }
 
       const entry = { id: Date.now()+addedCount+Math.random(), date:dateStr, account, code: code||'-', name, amount, memo };
+      if(!entry.name) entry.name = entry.code;
       parsed.push(entry);
-      if(!name && code) toLookup.push(entry);
       addedCount++;
     });
-
-    let lookedUpCount = 0;
-    if(toLookup.length){
-      status.textContent = `${addedCount}건 확인됨 · 종목명 ${toLookup.length}건 자동 조회 중...`;
-      await Promise.all(toLookup.map(async entry=>{
-        const result = await lookupStockName(entry.code);
-        if(result && result.name){ entry.name = result.name; lookedUpCount++; }
-        else entry.name = '(종목명 미확인)';
-      }));
-    }
 
     if(parsed.length){
       userDividends.push(...parsed);
@@ -2795,7 +2752,7 @@ divUploadBtn.addEventListener('click', async ()=>{
       renderDividendsPage(); refreshDividendDependents();
     }
 
-    status.textContent = `업로드 완료 — 추가 ${addedCount}건` + (lookedUpCount ? ` (종목명 자동조회 ${lookedUpCount}건)` : '') + `, 형식 오류로 제외 ${skippedCount}건`;
+    status.textContent = `업로드 완료 — 추가 ${addedCount}건, 형식 오류로 제외 ${skippedCount}건`;
     status.style.color = addedCount ? 'var(--up)' : 'var(--down)';
     divFileInput.value = '';
     divUploadBtn.disabled = true;
@@ -3591,7 +3548,7 @@ document.getElementById('addCategory').addEventListener('click', ()=>{
 const GOOGLE_CLIENT_ID = '48865465302-osuijlbusfmfit9ju16uuqlo8nb19smf.apps.googleusercontent.com'; // 가계부(my-budget)와 같은 저장소/주소에 올리면 그 앱에서 쓰던 클라이언트 ID를 그대로 재사용할 수 있습니다.
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME = 'asset-dashboard-sync.json';
-const SYNC_KEYS = ['principalEntries','holdingEntries','userDividends','userStockRegistry','retirementPlan','priceSnapshots','cashSnapshots','categoryList','accountList','pageOrder'];
+const SYNC_KEYS = ['principalEntries','holdingEntries','userDividends','userStockRegistry','stockMaster','retirementPlan','priceSnapshots','cashSnapshots','categoryList','accountList','pageOrder'];
 
 let driveAccessToken = null;
 let driveFileId = localStorage.getItem('driveFileId') || null;
