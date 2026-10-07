@@ -222,6 +222,14 @@
   .edit-input:focus{ outline:none; border-color:var(--gold-dim); }
   .diff-tag{ font-family:var(--mono); font-size:10.5px; padding:2px 7px; border-radius:20px; margin-left:6px;}
 
+  .ret-group-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .ret-group-head h3{ margin:0; }
+  .ret-group-total{ font-family:var(--mono); font-size:13px; color:var(--ink-dim); }
+  .ret-add-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+  .ret-add-row select, .ret-add-row input[type=text]{ min-width:200px; }
+  .ret-acct-table th, .ret-acct-table td{ white-space:nowrap; }
+  .ret-src{ font-family:var(--mono); font-size:10px; color:var(--ink-faint); margin-left:6px; }
+  .ret-empty{ padding:14px 4px; font-size:12.5px; color:var(--ink-faint); }
   .summary-strip{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
   @media(max-width:900px){ .summary-strip{ grid-template-columns:repeat(2,1fr);} }
   .stat-card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:0 1px 3px rgba(20,20,15,0.04); }
@@ -286,6 +294,14 @@
       <div class="nav-item" data-page="dividends">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1.4 1.1-2.5 2.5-2.5s2.5 .8 2.5 2c0 1.6-2 1.8-2.5 2-1 .4-2.5 .8-2.5 2.5 0 1.2 1.1 2 2.5 2s2.5-1.1 2.5-2.5"/></svg>
         배당금 관리
+      </div>
+      <div class="nav-item" data-page="valuation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14l2.5 2.5L16 12"/></svg>
+        월말 평가금
+      </div>
+      <div class="nav-item" data-page="retirement">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6"/></svg>
+        은퇴 설계
       </div>
       <div class="nav-item" data-page="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -822,6 +838,197 @@
     </section>
 
     <!-- ============ PAGE: SETTINGS ============ -->
+    <!-- ============ PAGE: MONTH-END VALUATION ============ -->
+    <section class="page" id="page-valuation" style="padding:0;border:none;">
+      <div class="page-head">
+        <div class="wrap">
+          <div class="eyebrow">Month-end Valuation</div>
+          <h2>월말 평가금</h2>
+          <p>매달 말일 기준으로 <b>종목별 단가만</b> 입력하면, 그 날짜까지의 매수·매도 내역으로 계좌별 보유 수량을 계산해 평가금을 자동으로 만듭니다. 단가는 계좌와 상관없이 종목당 하나만 입력하면 되고, 결과는 대시보드와 은퇴 설계에 반영됩니다.</p>
+        </div>
+      </div>
+      <div class="wrap">
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">기준일 선택</div>
+            <div class="sec-sub">원금 관리의 기준일과 같은 목록입니다</div>
+          </div>
+          <div class="form-card">
+            <div class="form-grid" style="grid-template-columns:auto auto auto auto 1fr;align-items:end;">
+              <div class="field" style="min-width:200px;"><label>입력할 기준일</label><select id="valDate"></select></div>
+              <div class="field" style="min-width:90px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valLastMonthEnd" type="button">지난달 말일 추가</button></div>
+              <div class="field" style="min-width:90px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valThisMonthEnd" type="button">이번 달 말일 추가</button></div>
+              <div class="field" style="min-width:170px;"><label>직접 날짜 추가</label><input type="date" id="valNewDate"></div>
+              <div class="field" style="min-width:80px;"><label>&nbsp;</label><button class="btn btn-primary" id="valAddDate" type="button">추가</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">종목별 단가 입력</div>
+            <div class="sec-sub" id="valPriceSub">기준일을 선택해주세요</div>
+          </div>
+          <div class="card table-scroll">
+            <table>
+              <thead><tr><th>종목</th><th>보유 수량 (계좌별)</th><th>단가 (원)</th><th>평가금</th><th>평균단가 대비</th></tr></thead>
+              <tbody id="valPriceTable"></tbody>
+            </table>
+            <div class="empty-state" id="valPriceEmpty" style="display:none;"></div>
+          </div>
+          <div class="date-hint" style="margin-top:10px;">※ 이 날짜에 단가를 입력하지 않은 종목은 가장 가까운 이전 입력 단가로 계산하고 "이전 단가"로 표시합니다. 이전 단가도 없으면 평균단가(매입가)로 임시 계산합니다. 수량은 매수·매도 관리에 입력한 내역 기준입니다(종목코드가 없는 거래는 제외).</div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">계좌별 평가금</div>
+            <div class="sec-sub">자동 계산 · 예수금은 선택 입력</div>
+          </div>
+          <div class="card table-scroll">
+            <table>
+              <thead><tr><th>계좌</th><th>종목 평가금</th><th>예수금 (선택)</th><th>평가금 합계</th><th>투자금</th><th>평가손익</th><th>수익률</th></tr></thead>
+              <tbody id="valAcctTable"></tbody>
+              <tfoot><tr id="valAcctTotal"></tr></tfoot>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">엑셀 / CSV로 일괄 업로드</div>
+            <div class="sec-sub">구글 스프레드시트 → 파일 → 다운로드 → .xlsx 또는 .csv</div>
+          </div>
+          <div class="form-card">
+            <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 12px;">
+              첫 행은 머리글이어야 합니다. 여러 달을 한 파일에 담아도 됩니다. 인식하는 컬럼:
+              <b>기준일</b>(또는 날짜), <b>종목코드</b>, <b>단가</b>(또는 현재가·종가), <b>종목명</b>(선택, 참고용),
+              <b>계좌</b>, <b>예수금</b>(선택). 한 줄에 <u>종목코드+단가</u> 또는 <u>계좌+예수금</u>을 넣으면 됩니다.
+              같은 기준일·종목이 이미 있으면 덮어쓰고, 목록에 없는 기준일은 자동으로 추가됩니다.
+              계좌명은 <span id="valUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+            </p>
+            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
+              <div class="field" style="min-width:220px;"><label>파일 선택</label><input type="file" id="valFileInput" accept=".xlsx,.xls,.csv"></div>
+              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-primary" id="valUploadBtn" type="button" disabled>업로드 실행</button></div>
+              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valTemplateBtn" type="button">양식 내려받기 (CSV)</button></div>
+            </div>
+            <div id="valUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">입력 현황</div>
+            <div class="sec-sub">날짜를 누르면 해당 기준일로 이동</div>
+          </div>
+          <div class="card table-scroll">
+            <table>
+              <thead><tr><th>기준일</th><th>단가 입력 종목</th><th>평가금 합계 (예수금 포함)</th><th></th></tr></thead>
+              <tbody id="valStatusTable"></tbody>
+            </table>
+            <div class="empty-state" id="valStatusEmpty" style="display:none;">아직 입력된 월말 평가금이 없습니다.</div>
+          </div>
+        </section>
+
+      </div>
+    </section>
+
+    <!-- ============ PAGE: RETIREMENT PLAN ============ -->
+    <section class="page" id="page-retirement" style="padding:0;border:none;">
+      <div class="page-head">
+        <div class="wrap">
+          <div class="eyebrow">Retirement Plan</div>
+          <h2>은퇴 설계</h2>
+          <p>연금(국민연금·퇴직연금·개인연금)과 기타현금자산을 한곳에서 관리하고, 은퇴 후 자산이 언제까지 유지되는지 시뮬레이션합니다. 계좌는 설정의 계좌와 연동되며, 계좌 이름을 바꾸면 앱 전체(원금·거래·배당·종목)에 함께 반영됩니다.</p>
+        </div>
+      </div>
+      <div class="wrap">
+
+        <section>
+          <div class="summary-strip" id="retSummary"></div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">기본 가정</div>
+            <div class="sec-sub">시뮬레이션에 사용되는 값</div>
+          </div>
+          <div class="form-card">
+            <div class="form-grid" style="grid-template-columns:repeat(4,1fr);align-items:start;">
+              <div class="field"><label>현재 나이</label><input type="number" id="retCurrentAge" min="0" max="120" step="1" placeholder="예: 40"></div>
+              <div class="field"><label>은퇴 나이</label><input type="number" id="retRetireAge" min="0" max="120" step="1"></div>
+              <div class="field"><label>기대수명 (자산 유지 목표 나이)</label><input type="number" id="retEndAge" min="0" max="130" step="1"></div>
+              <div class="field"><label>은퇴 후 월 생활비 (현재 가치, 원)</label><input type="number" id="retMonthlyExpense" min="0" step="10000" placeholder="0"></div>
+            </div>
+            <div class="form-grid" style="grid-template-columns:repeat(4,1fr);align-items:start;margin-top:12px;">
+              <div class="field"><label>물가상승률 (연 %)</label><input type="number" id="retInflation" step="0.1"></div>
+              <div class="field"><label>은퇴 전 수익률 (연 %)</label><input type="number" id="retReturnPre" step="0.1"></div>
+              <div class="field"><label>은퇴 후 수익률 (연 %)</label><input type="number" id="retReturnPost" step="0.1"></div>
+              <div class="field"><label>은퇴 전 월 추가 납입액 (원)</label><input type="number" id="retContribution" min="0" step="10000" placeholder="0"></div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">연금</div>
+            <div class="sec-sub">국민연금 · 퇴직연금 · 개인연금</div>
+          </div>
+
+          <div class="form-card" style="margin-bottom:20px;">
+            <h3 style="margin-bottom:12px;">국민연금</h3>
+            <div class="form-grid" style="grid-template-columns:repeat(2,1fr);max-width:620px;align-items:start;">
+              <div class="field"><label>월 수령 예상액 (현재 가치, 원)</label><input type="number" id="retNpsMonthly" min="0" step="10000" placeholder="0"></div>
+              <div class="field"><label>수령 시작 나이</label><input type="number" id="retNpsStartAge" min="0" max="120" step="1"></div>
+            </div>
+            <div class="date-hint" style="margin-top:8px;">※ 국민연금공단 '내 연금 알아보기'의 예상 수령액을 입력하세요. 물가에 연동되어 오르는 것으로 계산합니다. 별도 계좌가 없어 자산 합계에는 포함되지 않습니다.</div>
+          </div>
+
+          <div class="card" style="margin-bottom:20px;">
+            <div class="ret-group-head"><h3>퇴직연금</h3><span class="ret-group-total" id="retTotal-retire"></span></div>
+            <div id="retGroup-retire"></div>
+            <div class="ret-add-row"><select id="retAddSel-retire"></select><button class="btn btn-ghost" type="button" data-ret-add="retire">계좌 연결</button></div>
+          </div>
+
+          <div class="card">
+            <div class="ret-group-head"><h3>개인연금</h3><span class="ret-group-total" id="retTotal-personal"></span></div>
+            <div id="retGroup-personal"></div>
+            <div class="ret-add-row"><select id="retAddSel-personal"></select><button class="btn btn-ghost" type="button" data-ret-add="personal">계좌 연결</button></div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">기타현금자산</div>
+            <div class="sec-sub">ISA · 일반 계좌 등</div>
+          </div>
+          <div class="card">
+            <div class="ret-group-head"><h3>계좌 목록</h3><span class="ret-group-total" id="retTotal-cash"></span></div>
+            <div id="retGroup-cash"></div>
+            <div class="ret-add-row">
+              <select id="retAddSel-cash"></select>
+              <input type="text" id="retNewAcctName" placeholder="새 계좌 이름 (예: 계좌1)" style="display:none;">
+              <button class="btn btn-ghost" type="button" data-ret-add="cash">계좌 추가</button>
+            </div>
+          </div>
+          <div class="date-hint" style="margin-top:10px;">※ 반영 금액 우선순위: 직접 입력한 현재 평가금 → 가장 최근 월말 평가금(월말 평가금 페이지) → 원금 관리의 누적 원금. 하나의 계좌는 한 곳에만 연결할 수 있습니다.</div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">은퇴 시뮬레이션</div>
+            <div class="sec-sub" id="retSimSub">현재 자산 기준 · 명목 금액</div>
+          </div>
+          <div class="summary-strip" id="retSimSummary"></div>
+          <div class="card">
+            <div class="chart-box tall"><canvas id="retChart"></canvas></div>
+          </div>
+          <div id="retSimNote" class="date-hint" style="margin-top:10px;"></div>
+        </section>
+
+      </div>
+    </section>
+
     <section class="page" id="page-settings" style="padding:0;border:none;">
       <div class="page-head">
         <div class="wrap">
@@ -892,8 +1099,8 @@
    (e.g. Chart.js/xlsx not loading from the CDN), so page navigation
    always works even if other features degrade.
    ============================================================ */
-const DEFAULT_PAGE_ORDER = ['dashboard','principal','holdings','transactions','dividends','settings'];
-const PAGE_LABELS = { dashboard:'대시보드', principal:'원금 관리', holdings:'종목 관리', transactions:'매수·매도 관리', dividends:'배당금 관리', settings:'설정' };
+const DEFAULT_PAGE_ORDER = ['dashboard','principal','holdings','transactions','dividends','valuation','retirement','settings'];
+const PAGE_LABELS = { dashboard:'대시보드', principal:'원금 관리', holdings:'종목 관리', transactions:'매수·매도 관리', dividends:'배당금 관리', valuation:'월말 평가금', retirement:'은퇴 설계', settings:'설정' };
 let pageOrder = [];
 try{ pageOrder = JSON.parse(localStorage.getItem('pageOrder') || 'null'); }catch(e){ pageOrder = null; }
 if(!Array.isArray(pageOrder)) pageOrder = null;
@@ -1063,13 +1270,16 @@ function getSnapshotDates(){
 // (needed for any custom date the user adds that isn't one of the 6 base snapshots).
 function getAccountsForDate(date){
   if(accountsByDate[date]) return accountsByDate[date];
+  if(hasValuationData(date)) return valuationSnapshot(date).accounts;
   const zero = ()=>({principal:0, invested:0, valuation:0, cash:0});
   const result = {};
   getAccountNames().forEach(name=>{ result[name] = zero(); });
   return result;
 }
 function getHoldingsForDate(date){
-  return holdingsByDate[date] || [];
+  if(holdingsByDate[date]) return holdingsByDate[date];
+  if(hasValuationData(date)) return valuationSnapshot(date).rows;
+  return [];
 }
 
 /* ============================================================
@@ -1130,6 +1340,171 @@ try{ principalEntries = JSON.parse(localStorage.getItem('principalEntries') || '
 
 let transactions = [];
 try{ transactions = JSON.parse(localStorage.getItem('transactions') || '[]'); }catch(e){ transactions = []; }
+
+// declared at top level (not inside the big init try-block) so renameAccount() and the
+// 은퇴 설계 page can reach it even if dashboard initialization fails.
+let userDividends = [];
+try{ userDividends = JSON.parse(localStorage.getItem('userDividends') || '[]'); }catch(e){ userDividends = []; }
+
+/* ============================================================
+   월말 평가금 — data layer (no DOM; top level so getAccountsForDate,
+   renameAccount and 은퇴 설계 can use it regardless of init errors)
+   priceSnapshots: { 'YYYY-MM-DD': { '종목코드': 단가 } }   ← 계좌 통합, 종목당 1개
+   cashSnapshots : { 'YYYY-MM-DD': { '계좌명': 예수금 } }   ← 선택 입력
+   ============================================================ */
+let priceSnapshots = {};
+try{ priceSnapshots = JSON.parse(localStorage.getItem('priceSnapshots') || '{}') || {}; }catch(e){ priceSnapshots = {}; }
+let cashSnapshots = {};
+try{ cashSnapshots = JSON.parse(localStorage.getItem('cashSnapshots') || '{}') || {}; }catch(e){ cashSnapshots = {}; }
+[ 'priceSnapshots','cashSnapshots' ].forEach(k=>{
+  const o = k === 'priceSnapshots' ? priceSnapshots : cashSnapshots;
+  if(typeof o !== 'object' || Array.isArray(o)){ if(k === 'priceSnapshots') priceSnapshots = {}; else cashSnapshots = {}; }
+});
+['quoteConfig','quoteCache','accountCash'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} }); // leftovers of the removed live-quote feature
+
+// Net holdings per account as of a date, from the 매수·매도 ledger (average-cost method; a sell reduces cost at the average cost).
+function computeNetHoldings(asOf){
+  const byAcct = {};
+  const txs = [...transactions]
+    .filter(t=> !asOf || String(t.date||'') <= asOf)
+    .sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')) || (a.id - b.id));
+  txs.forEach(t=>{
+    if(!t.code || t.code === '-') return;
+    const qty = Number(t.qty), price = Number(t.price);
+    if(!(qty > 0) || !(price >= 0)) return;
+    const code = String(t.code).toUpperCase();
+    const m = byAcct[t.account] || (byAcct[t.account] = new Map());
+    const h = m.get(code) || { code, name:t.name || code, qty:0, invested:0 };
+    if(t.name && t.name !== '(종목명 미확인)') h.name = t.name;
+    if(t.type === '매수'){ h.qty += qty; h.invested += qty * price; }
+    else if(t.type === '매도'){
+      const sell = Math.min(qty, h.qty);
+      const avg = h.qty > 0 ? h.invested / h.qty : 0;
+      h.qty -= sell; h.invested -= avg * sell;
+    }
+    m.set(code, h);
+  });
+  const out = {};
+  Object.keys(byAcct).forEach(a=>{
+    out[a] = Array.from(byAcct[a].values()).filter(h=> h.qty > 1e-9).map(h=>{
+      const reg = (userStockRegistry||[]).find(s=> s.account === a && String(s.code).toUpperCase() === h.code);
+      const nm = reg ? reg.name : (CATALOG[h.code] ? CATALOG[h.code].name : h.name);
+      return { ...h, name: nm };
+    });
+  });
+  return out;
+}
+// Price for a code on a date: the exact entry if present, otherwise the most recent earlier entry (flagged), else null.
+function priceFor(code, date){
+  const c = String(code).toUpperCase();
+  const own = priceSnapshots[date] && priceSnapshots[date][c];
+  if(own > 0) return { price: own, date, exact: true };
+  const earlier = Object.keys(priceSnapshots).filter(d=> d < date && priceSnapshots[d][c] > 0).sort();
+  if(earlier.length){ const d = earlier[earlier.length-1]; return { price: priceSnapshots[d][c], date: d, exact: false }; }
+  return null;
+}
+function hasValuationData(date){
+  return !!(date && ((priceSnapshots[date] && Object.keys(priceSnapshots[date]).length) || (cashSnapshots[date] && Object.keys(cashSnapshots[date]).length)));
+}
+// Valuation at a date = Σ (quantity held at that date × 단가) per account (+ optional 예수금).
+// A holding with no usable price falls back to its cost basis and is flagged, so totals never silently drop.
+function valuationSnapshot(date){
+  const net = computeNetHoldings(date);
+  const accounts = {}, rows = [], detail = [];
+  getAccountNames().forEach(name=>{
+    let invested = 0, valuation = 0, missing = 0, stale = 0, count = 0;
+    (net[name] || []).forEach(h=>{
+      const pf = priceFor(h.code, date);
+      const avg = h.qty ? h.invested / h.qty : 0;
+      const cur = pf ? pf.price : avg;
+      const val = cur * h.qty, gain = val - h.invested, ret = h.invested ? gain / h.invested * 100 : 0;
+      if(!pf) missing++; else if(!pf.exact) stale++;
+      count++; invested += h.invested; valuation += val;
+      rows.push([name, h.code, h.qty, avg, h.invested, cur, val, gain, ret]);
+      detail.push({ account:name, code:h.code, name:h.name, qty:h.qty, avg, invested:h.invested, cur, val, gain, ret,
+                    priceDate: pf ? pf.date : null, exact: !!(pf && pf.exact), hasPrice: !!pf });
+    });
+    const cash = Number(cashSnapshots[date] && cashSnapshots[date][name]) || 0;
+    accounts[name] = { principal:0, invested, valuation, cash, missing, stale, count };
+  });
+  return { accounts, rows, detail, hasData: hasValuationData(date) };
+}
+function latestValuationDate(onOrBefore){
+  const ds = Array.from(new Set([...Object.keys(priceSnapshots), ...Object.keys(cashSnapshots)]))
+    .filter(d=> hasValuationData(d) && (!onOrBefore || d <= onOrBefore)).sort();
+  return ds.length ? ds[ds.length-1] : null;
+}
+
+/* ============================================================
+   RETIREMENT PLAN STATE + ACCOUNT RENAME (top level, so they are
+   reachable from Settings, 은퇴 설계 and the init blocks alike)
+   ============================================================ */
+const RET_DEFAULT_SETTINGS = { currentAge:null, retireAge:60, endAge:90, monthlyExpense:0, inflation:2.5, returnPre:5, returnPost:3, contribution:0 };
+let retirementPlan = null;
+try{ retirementPlan = JSON.parse(localStorage.getItem('retirementPlan') || 'null'); }catch(e){ retirementPlan = null; }
+if(!retirementPlan || typeof retirementPlan !== 'object'){
+  // First run: pre-link the default accounts to the structure described by the user
+  // (퇴직연금/IRP → 퇴직연금, 개인연금 → 개인연금, ISA → 기타현금자산). Changeable on the page.
+  const have = getAccountNames();
+  retirementPlan = {
+    settings: {...RET_DEFAULT_SETTINGS},
+    nps: { monthly:0, startAge:65 },
+    groups: {
+      retire:   ['퇴직연금','IRP'].filter(n=>have.includes(n)),
+      personal: ['개인연금'].filter(n=>have.includes(n)),
+      cash:     ['ISA'].filter(n=>have.includes(n)),
+    },
+    values: {},
+  };
+}
+function normalizeRetirementPlan(){
+  const p = retirementPlan;
+  p.settings = Object.assign({}, RET_DEFAULT_SETTINGS, p.settings || {});
+  p.nps = Object.assign({ monthly:0, startAge:65 }, p.nps || {});
+  p.groups = Object.assign({ retire:[], personal:[], cash:[] }, p.groups || {});
+  p.values = (p.values && typeof p.values === 'object') ? p.values : {};
+  const seen = new Set(), names = getAccountNames();
+  ['retire','personal','cash'].forEach(k=>{
+    p.groups[k] = (Array.isArray(p.groups[k]) ? p.groups[k] : []).filter(n=> names.includes(n) && !seen.has(n) && (seen.add(n), true));
+  });
+  Object.keys(p.values).forEach(n=>{ if(!names.includes(n)) delete p.values[n]; });
+}
+normalizeRetirementPlan();
+
+// Rename an account everywhere: settings list, 원금 입출금, 매수·매도, 배당금, 등록 종목, 은퇴 설계 연결.
+function renameAccount(oldName, newName){
+  newName = (newName || '').trim();
+  if(!newName) return { ok:false, msg:'계좌 이름을 입력해주세요.' };
+  if(newName === oldName) return { ok:false, msg:'' };
+  if(accountList.some(a=>a.name === newName)) return { ok:false, msg:'이미 존재하는 계좌 이름입니다.' };
+  const acc = accountList.find(a=>a.name === oldName);
+  if(!acc) return { ok:false, msg:'계좌를 찾을 수 없습니다.' };
+  acc.name = newName;
+  const swap = arr => arr.forEach(x=>{ if(x && x.account === oldName) x.account = newName; });
+  swap(principalEntries); swap(transactions); swap(userDividends); swap(userStockRegistry);
+  Object.keys(retirementPlan.groups).forEach(k=>{
+    retirementPlan.groups[k] = retirementPlan.groups[k].map(n=> n === oldName ? newName : n);
+  });
+  if(Object.prototype.hasOwnProperty.call(retirementPlan.values, oldName)){
+    retirementPlan.values[newName] = retirementPlan.values[oldName];
+    delete retirementPlan.values[oldName];
+  }
+  Object.keys(cashSnapshots).forEach(d=>{
+    if(cashSnapshots[d] && Object.prototype.hasOwnProperty.call(cashSnapshots[d], oldName)){
+      cashSnapshots[d][newName] = cashSnapshots[d][oldName]; delete cashSnapshots[d][oldName];
+    }
+  });
+  localStorage.setItem('cashSnapshots', JSON.stringify(cashSnapshots));
+  const save = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
+  save('accountList', accountList);
+  save('principalEntries', principalEntries);
+  save('transactions', transactions);
+  save('userDividends', userDividends);
+  save('userStockRegistry', userStockRegistry);
+  save('retirementPlan', retirementPlan);
+  if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
+  return { ok:true };
+}
 
 if(typeof Chart !== 'undefined' && Chart.defaults){
   Chart.defaults.font.family = "'Pretendard','IBM Plex Mono',sans-serif";
@@ -1208,7 +1583,7 @@ function computeAssetClasses(holdings){
   const map = {};
   holdings.forEach(h=>{
     const [acct,code,qty,avg,inv,cur,val,gain] = h;
-    const cat = (CATALOG[code]||{}).cat || '기타';
+    const cat = (CATALOG[code]||{}).cat || ((userStockRegistry||[]).find(r=>String(r.code).toUpperCase()===String(code).toUpperCase())||{}).category || '기타';
     if(!map[cat]) map[cat] = {name:cat, invested:0, valuation:0, color: getCategoryColor(cat)};
     map[cat].invested += inv; map[cat].valuation += val;
   });
@@ -1354,7 +1729,13 @@ function renderHoldingsTable(filter){
   const rows = currentHoldings.filter(h => filter==='전체' || h[0]===filter);
   document.getElementById('holdingsTable').innerHTML = rows.map(h=>{
     const [acct,code,qty,avg,inv,cur,val,gain,ret] = h;
-    const meta = CATALOG[code] || {name:code};
+    const liveName = (()=>{
+      const reg = (userStockRegistry||[]).find(r=> r.account===acct && String(r.code).toUpperCase()===String(code).toUpperCase());
+      if(reg) return reg.name;
+      const tx = [...transactions].reverse().find(t=> t.account===acct && t.code===code && t.name && t.name!=='(종목명 미확인)');
+      return tx ? tx.name : code;
+    })();
+    const meta = CATALOG[code] || {name:liveName};
     return `<tr>
       <td><span class="grp-badge" style="border-color:${ACCT_COLOR[acct]}55;color:${ACCT_COLOR[acct]}">${acct}</span></td>
       <td>${meta.name} <span class="name-code">${code}</span></td>
@@ -1748,6 +2129,7 @@ function renderTxSummary(){
   net.textContent = (buy-sell>=0?'+':'') + won(buy-sell);
   net.className = 'value ' + (buy-sell>=0?'pos':'down');
   document.getElementById('sumCount').textContent = transactions.length;
+  try{ if(typeof window.renderValuationPage === 'function') window.renderValuationPage(); }catch(e){}
 }
 renderTxTable(); renderTxSummary();
 
@@ -2052,9 +2434,6 @@ document.getElementById('addReg').addEventListener('click', ()=>{
   const toast = document.getElementById('regToast');
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
 });
-
-let userDividends = [];
-try{ userDividends = JSON.parse(localStorage.getItem('userDividends') || '[]'); }catch(e){ userDividends = []; }
 
 // all years present in base data or user entries, ascending
 function divYearsList(){
@@ -2446,6 +2825,546 @@ try{ renderDividendsPage(); }catch(e){ console.error('initial renderDividendsPag
 }
 
 /* ============================================================
+   RETIREMENT PLAN PAGE (은퇴 설계) — independent of the dashboard
+   init block above, so a failure there never breaks this page.
+   ============================================================ */
+try{
+const $ = id => document.getElementById(id);
+const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const RET_NEW_COLORS = ['#7c5cbf','#2a9d8f','#e07a5f','#4d908e','#f4a261','#577590','#b5838d'];
+let retChartInst = null;
+
+function saveRetirementPlan(){
+  localStorage.setItem('retirementPlan', JSON.stringify(retirementPlan));
+  if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
+}
+
+/* ---- value resolution: 직접 입력 → 대시보드 평가금 → 누적 원금 ---- */
+function retPrincipal(name){
+  const t = toLocalISO(new Date());
+  return principalEntries
+    .filter(e=> e.account === name && e.date <= t)
+    .reduce((s,e)=> s + (e.type === '출금' ? -e.amount : e.amount), 0);
+}
+function retDashValue(name){
+  // latest 월말 평가금 on/before today for this account: 종목 평가금 + 예수금
+  const d = latestValuationDate(toLocalISO(new Date()));
+  if(!d) return 0;
+  const a = valuationSnapshot(d).accounts[name];
+  return a ? (a.valuation||0) + (a.cash||0) : 0;
+}
+function retResolve(name){
+  const m = retirementPlan.values[name];
+  if(typeof m === 'number' && isFinite(m)) return { value:m, src:'직접 입력' };
+  const d = retDashValue(name);
+  if(d > 0) return { value:d, src:'월말 평가금 ('+fmtDot(latestValuationDate(toLocalISO(new Date())))+')' };
+  return { value:retPrincipal(name), src:'누적 원금 기준' };
+}
+function retGroupTotal(key){
+  return retirementPlan.groups[key].reduce((s,n)=> s + retResolve(n).value, 0);
+}
+
+/* ---- inputs ↔ plan ---- */
+const RET_INPUTS = [
+  ['retCurrentAge','settings','currentAge',true], ['retRetireAge','settings','retireAge',true],
+  ['retEndAge','settings','endAge',true], ['retMonthlyExpense','settings','monthlyExpense',false],
+  ['retInflation','settings','inflation',false], ['retReturnPre','settings','returnPre',false],
+  ['retReturnPost','settings','returnPost',false], ['retContribution','settings','contribution',false],
+  ['retNpsMonthly','nps','monthly',false], ['retNpsStartAge','nps','startAge',true],
+];
+function fillRetInputs(){
+  RET_INPUTS.forEach(([id,sec,key])=>{
+    const v = retirementPlan[sec][key];
+    $(id).value = (v === null || v === undefined) ? '' : v;
+  });
+}
+RET_INPUTS.forEach(([id,sec,key,nullable])=>{
+  $(id).addEventListener('input', ()=>{
+    const raw = $(id).value;
+    const n = parseFloat(raw);
+    retirementPlan[sec][key] = isFinite(n) ? n : (nullable ? null : 0);
+    saveRetirementPlan();
+    renderRetSummaryAndSim();
+  });
+});
+
+/* ---- account groups ---- */
+function unlinkedAccounts(){
+  const used = new Set([].concat(...Object.values(retirementPlan.groups)));
+  return getAccountNames().filter(n=> !used.has(n));
+}
+function renderRetGroup(key){
+  const names = retirementPlan.groups[key];
+  const box = $('retGroup-'+key);
+  if(!names.length){
+    box.innerHTML = '<div class="ret-empty">연결된 계좌가 없습니다. 아래에서 계좌를 연결해주세요.</div>';
+  } else {
+    const rows = names.map((n,i)=>{
+      const r = retResolve(n);
+      const dash = retDashValue(n);
+      const manual = retirementPlan.values[n];
+      return `<tr>
+        <td><span class="grp-badge" style="border-color:${ACCT_COLOR[n]}55;color:${ACCT_COLOR[n]}">${escHtml(n)}</span>
+            <button class="icon-btn" data-ret-rename="${i}" title="계좌 이름 변경 (앱 전체에 반영)">이름 변경</button></td>
+        <td>${won(retPrincipal(n))}</td>
+        <td>${dash > 0 ? won(dash) : '–'}</td>
+        <td><input class="edit-input" type="number" data-ret-val="${i}" value="${typeof manual === 'number' ? manual : ''}" placeholder="자동" style="width:140px;"></td>
+        <td style="font-weight:600;">${won(r.value)}<span class="ret-src">${r.src}</span></td>
+        <td><button class="btn-danger" data-ret-unlink="${i}">연결 해제</button></td>
+      </tr>`;
+    }).join('');
+    box.innerHTML = `<div class="table-scroll"><table class="ret-acct-table">
+      <thead><tr><th>계좌</th><th>누적 원금</th><th>최근 월말 평가금</th><th>현재 평가금 (직접 입력)</th><th>반영 금액</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+    box.querySelectorAll('[data-ret-rename]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const old = names[parseInt(btn.dataset.retRename,10)];
+        const nn = prompt(`"${old}" 계좌의 새 이름을 입력하세요.\n(원금·거래내역·배당금·등록 종목 등 앱 전체의 계좌명이 함께 바뀝니다)`, old);
+        if(nn === null) return;
+        const res = renameAccount(old, nn);
+        if(!res.ok){ if(res.msg) alert(res.msg); return; }
+        afterAccountsChanged();
+      });
+    });
+    box.querySelectorAll('[data-ret-val]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const n = names[parseInt(inp.dataset.retVal,10)];
+        const v = parseFloat(inp.value);
+        if(isFinite(v)) retirementPlan.values[n] = v; else delete retirementPlan.values[n];
+        saveRetirementPlan();
+        renderRetirementPage();
+      });
+    });
+    box.querySelectorAll('[data-ret-unlink]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const n = names[parseInt(btn.dataset.retUnlink,10)];
+        retirementPlan.groups[key] = retirementPlan.groups[key].filter(x=> x !== n);
+        saveRetirementPlan();
+        renderRetirementPage();
+      });
+    });
+  }
+  $('retTotal-'+key).textContent = '합계 ' + won(retGroupTotal(key));
+}
+function renderRetAddSelects(){
+  const free = unlinkedAccounts();
+  ['retire','personal','cash'].forEach(key=>{
+    const sel = $('retAddSel-'+key);
+    const prev = sel.value;
+    let html = '<option value="">' + (free.length || key === 'cash' ? '계좌 선택…' : '연결 가능한 계좌 없음') + '</option>';
+    html += free.map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
+    if(key === 'cash') html += '<option value="__new__">＋ 새 계좌 만들기…</option>';
+    sel.innerHTML = html;
+    if([...sel.options].some(o=>o.value === prev)) sel.value = prev;
+  });
+  $('retNewAcctName').style.display = $('retAddSel-cash').value === '__new__' ? '' : 'none';
+}
+$('retAddSel-cash').addEventListener('change', ()=>{
+  $('retNewAcctName').style.display = $('retAddSel-cash').value === '__new__' ? '' : 'none';
+});
+document.querySelectorAll('[data-ret-add]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const key = btn.dataset.retAdd;
+    let name = $('retAddSel-'+key).value;
+    if(!name){ alert('연결할 계좌를 선택해주세요.'); return; }
+    if(name === '__new__'){
+      const nn = $('retNewAcctName').value.trim();
+      if(!nn){ alert('새 계좌 이름을 입력해주세요.'); return; }
+      if(accountList.some(a=>a.name === nn)){ alert('이미 존재하는 계좌 이름입니다. 목록에서 선택해주세요.'); return; }
+      accountList.push({ name:nn, color: RET_NEW_COLORS[accountList.length % RET_NEW_COLORS.length] });
+      localStorage.setItem('accountList', JSON.stringify(accountList));
+      $('retNewAcctName').value = '';
+      name = nn;
+    }
+    retirementPlan.groups[key].push(name);
+    saveRetirementPlan();
+    afterAccountsChanged();
+  });
+});
+
+/* ---- simulation ---- */
+function runRetirementSim(totalAssets){
+  const s = retirementPlan.settings, nps = retirementPlan.nps;
+  const cur = s.currentAge, ret = s.retireAge, end = s.endAge;
+  const okNum = v => typeof v === 'number' && isFinite(v);
+  if(!okNum(cur) || !okNum(ret) || !okNum(end) || cur < 0 || ret < cur || end <= ret) return null;
+  const infl = (s.inflation||0)/100;
+  const mPre = Math.pow(1 + (s.returnPre||0)/100, 1/12) - 1;
+  const mPost = Math.pow(1 + (s.returnPost||0)/100, 1/12) - 1;
+  const months = Math.round((end - cur) * 12);
+  const retMonth = Math.round((ret - cur) * 12);
+  const npsStart = okNum(nps.startAge) ? nps.startAge : 65;
+  const defl = t => Math.pow(1 + infl, t/12);
+  const withdrawal = t => {
+    const age = cur + t/12;
+    const expense = (s.monthlyExpense||0) * defl(t);
+    const pension = (age >= npsStart) ? (nps.monthly||0) * defl(t) : 0;
+    return { expense, pension, net: expense - pension };
+  };
+  let bal = totalAssets, depletedAge = null, shortfall = 0, balAtRetire = null, required = 0;
+  const points = [];
+  const record = t => points.push({ age: cur + t/12, nominal: Math.max(bal,0), real: Math.max(bal,0) / defl(t) });
+  for(let t = 0; t < months; t++){
+    if(t === retMonth) balAtRetire = bal;
+    if(t % 12 === 0) record(t);
+    if(t < retMonth){
+      bal = bal * (1 + mPre) + (s.contribution||0);
+    } else {
+      const w = withdrawal(t).net;
+      required += w / Math.pow(1 + mPost, t - retMonth + 1);
+      bal = bal * (1 + mPost) - w;
+      if(bal < 0){
+        if(depletedAge === null) depletedAge = cur + (t+1)/12;
+        shortfall += -bal;
+        bal = 0;
+      }
+    }
+  }
+  if(retMonth >= months) balAtRetire = bal;
+  record(months);
+  const atRet = withdrawal(retMonth);
+  return { points, balAtRetire, balAtRetireReal: balAtRetire / defl(retMonth), required, requiredReal: required / defl(retMonth),
+           depletedAge, shortfall, finalBal: bal, atRet, npsStart, cur, ret, end, retMonth, months };
+}
+
+function statCard(label, value, cls, sub){
+  return `<div class="stat-card"><div class="label">${label}</div><div class="value ${cls||''}" style="font-size:19px;">${value}</div>${sub ? `<div class="date-hint" style="margin-top:6px;">${sub}</div>` : ''}</div>`;
+}
+function renderRetSummaryAndSim(){
+  const pension = retGroupTotal('retire') + retGroupTotal('personal');
+  const cash = retGroupTotal('cash');
+  const total = pension + cash;
+  const s = retirementPlan.settings;
+  const yearsLeft = (typeof s.currentAge === 'number' && typeof s.retireAge === 'number') ? Math.max(s.retireAge - s.currentAge, 0) : null;
+  $('retSummary').innerHTML =
+    statCard('연금자산 (퇴직·개인연금)', won(pension)) +
+    statCard('기타현금자산', won(cash)) +
+    statCard('총 은퇴 준비 자산', won(total), 'pos') +
+    statCard('은퇴까지 남은 기간', yearsLeft === null ? '–' : yearsLeft + '년');
+
+  const sim = runRetirementSim(total);
+  const note = $('retSimNote');
+  if(!sim){
+    $('retSimSummary').innerHTML = statCard('은퇴 시점 예상 자산','–') + statCard('은퇴 시점 필요 자산','–') + statCard('과부족','–') + statCard('자산 소진 시점','–');
+    note.textContent = '기본 가정에서 현재 나이를 입력하고, 현재 나이 ≤ 은퇴 나이 < 기대수명이 되도록 설정하면 시뮬레이션이 표시됩니다.';
+    if(retChartInst){ try{ retChartInst.destroy(); }catch(e){} retChartInst = null; }
+    return;
+  }
+  const gap = sim.balAtRetire - sim.required;
+  const npsAtRet = sim.cur + sim.retMonth/12 >= sim.npsStart ? won(sim.atRet.pension) : `수령 전 (${sim.npsStart}세부터)`;
+  $('retSimSummary').innerHTML =
+    statCard('은퇴 시점 예상 자산', won(sim.balAtRetire), '', `현재 가치 ${won(sim.balAtRetireReal)}`) +
+    statCard('은퇴 시점 필요 자산', won(sim.required), '', `현재 가치 ${won(sim.requiredReal)}`) +
+    statCard(gap >= 0 ? '초과 (여유)' : '부족', (gap >= 0 ? '+' : '−') + won(Math.abs(gap)), gap >= 0 ? 'pos' : 'down') +
+    statCard('자산 소진 시점', sim.depletedAge === null ? `${sim.end}세까지 유지` : sim.depletedAge.toFixed(1) + '세', sim.depletedAge === null ? 'pos' : 'down',
+             sim.depletedAge === null ? `${sim.end}세 시점 잔액 ${won(sim.finalBal)}` : `이후 부족분 누계 ${won(sim.shortfall)}`)
+    + statCard('은퇴 시점 월 생활비', won(sim.atRet.expense), '', '물가 반영(명목)')
+    + statCard('국민연금 월 수령', npsAtRet, '', '물가 연동(명목)')
+    + statCard('월 순인출액 (은퇴 시점)', won(sim.atRet.net), '', '생활비 − 국민연금')
+    + statCard('은퇴 후 기간', (sim.end - sim.ret) + '년', '', `${sim.ret}세 → ${sim.end}세`);
+  note.textContent = `은퇴 시점 필요 자산은 은퇴 후 매월 순인출액을 은퇴 후 수익률로 할인해 합산한 값입니다. 모든 금액은 입력한 가정에 따른 단순 추정이며 실제와 다를 수 있습니다.`;
+
+  if(retChartInst){ try{ retChartInst.destroy(); }catch(e){} retChartInst = null; }
+  if(typeof Chart !== 'undefined' && typeof safeNewChart === 'function'){
+    retChartInst = safeNewChart('retChart', {
+      type:'line',
+      data:{
+        labels: sim.points.map(p=> Math.round(p.age) + '세'),
+        datasets:[
+          { label:'자산 잔액 (명목)', data: sim.points.map(p=>p.nominal), borderColor:'#b8843a', backgroundColor:'rgba(184,132,58,0.12)', fill:true, tension:.25, borderWidth:2.4, pointRadius:0, pointHoverRadius:5 },
+          { label:'현재 가치 환산', data: sim.points.map(p=>p.real), borderColor:'#8a8d99', backgroundColor:'transparent', borderDash:[4,3], fill:false, tension:.25, borderWidth:1.6, pointRadius:0, pointHoverRadius:4 },
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle', font:{size:11.5} } },
+          tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${won(c.parsed.y)} 원` } }
+        },
+        scales:{
+          x:{ grid:{ display:false }, ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:14, font:{size:10.5} } },
+          y:{ grid:{ color:'#eeeeec' }, ticks:{ callback:v=> (v/100000000).toFixed(1)+'억', font:{size:10.5} } }
+        }
+      }
+    });
+  }
+}
+
+function renderRetirementPage(){
+  normalizeRetirementPlan();
+  ['retire','personal','cash'].forEach(renderRetGroup);
+  renderRetAddSelects();
+  renderRetSummaryAndSim();
+}
+fillRetInputs();
+try{ renderRetirementPage(); }catch(e){ console.error('initial renderRetirementPage failed:', e); }
+document.querySelector('.nav-item[data-page="retirement"]').addEventListener('click', ()=>{
+  try{ renderRetirementPage(); }catch(e){ console.error('renderRetirementPage failed:', e); }
+});
+window.renderRetirementPage = renderRetirementPage;
+}catch(err){
+  console.error('Retirement page setup error:', err);
+}
+
+/* ============================================================
+   월말 평가금 PAGE — independent try-block (same isolation pattern as the other pages)
+   ============================================================ */
+try{
+const vEl = id => document.getElementById(id);
+const vEsc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let valDate = null;
+
+function saveValuation(){
+  localStorage.setItem('priceSnapshots', JSON.stringify(priceSnapshots));
+  localStorage.setItem('cashSnapshots', JSON.stringify(cashSnapshots));
+  if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
+}
+function saveCustomDates(){
+  localStorage.setItem('customPrincipalDates', JSON.stringify(customDates));
+  if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
+}
+// Everything that reads valuations is re-rendered through here.
+function refreshAfterValuation(){
+  const run = fn => { try{ if(typeof fn === 'function') fn(); }catch(e){ console.error('valuation refresh failed:', e); } };
+  run(renderValuationPage);
+  run(typeof renderPrincipalPage === 'function' ? renderPrincipalPage : null);
+  run(typeof triggerRender === 'function' ? triggerRender : null);
+  run(window.renderRetirementPage);
+}
+function lastDayOf(year, monthIndex){ return toLocalISO(new Date(year, monthIndex + 1, 0)); }
+function addBaseDate(d){
+  if(!d) return false;
+  if(getSnapshotDates().includes(d)) return false;
+  customDates.push(d); saveCustomDates(); return true;
+}
+function priceInputsFor(date){
+  // every code held by any account on that date → { code, name, perAcct:[{account, qty}], totalQty, avgCost }
+  const net = computeNetHoldings(date), byCode = new Map();
+  Object.keys(net).forEach(acct=>{
+    net[acct].forEach(h=>{
+      const e = byCode.get(h.code) || { code:h.code, name:h.name, perAcct:[], totalQty:0, cost:0 };
+      e.perAcct.push({ account:acct, qty:h.qty }); e.totalQty += h.qty; e.cost += h.invested;
+      byCode.set(h.code, e);
+    });
+  });
+  return Array.from(byCode.values()).sort((a,b)=> a.name.localeCompare(b.name,'ko'));
+}
+
+function renderValDateSelect(){
+  const sel = vEl('valDate');
+  const dates = getSnapshotDates().slice().reverse();
+  if(!dates.includes(valDate)) valDate = dates.length ? dates[0] : null;
+  sel.innerHTML = dates.length
+    ? dates.map(d=>`<option value="${d}">${fmtDot(d)}${hasValuationData(d) ? ' ✓' : ''}</option>`).join('')
+    : '<option value="">기준일 없음</option>';
+  if(valDate) sel.value = valDate;
+}
+
+function renderValuationPage(){
+  renderValDateSelect();
+  vEl('valUploadAccountHint').textContent = getAccountNames().join('·');
+  const priceBody = vEl('valPriceTable'), acctBody = vEl('valAcctTable'), totalRow = vEl('valAcctTotal');
+  const active = document.activeElement;
+  const typing = active && active.tagName === 'INPUT' && (priceBody.contains(active) || acctBody.contains(active));
+
+  if(!valDate){
+    vEl('valPriceSub').textContent = '기준일을 먼저 추가해주세요 (위의 "말일 추가" 버튼)';
+    priceBody.innerHTML = ''; acctBody.innerHTML = ''; totalRow.innerHTML = '';
+    const e = vEl('valPriceEmpty'); e.style.display = 'block'; e.textContent = '기준일이 없습니다. 위에서 기준일을 추가하거나 엑셀을 업로드해주세요.';
+    renderValStatus(); return;
+  }
+  vEl('valPriceSub').textContent = `${fmtDot(valDate)} 기준`;
+  const snap = valuationSnapshot(valDate);
+  if(!typing){
+    const inputs = priceInputsFor(valDate);
+    const empty = vEl('valPriceEmpty');
+    if(!inputs.length){
+      priceBody.innerHTML = '';
+      empty.style.display = 'block'; empty.textContent = '이 날짜까지 보유한 종목이 없습니다. 매수·매도 관리에 종목코드와 함께 거래를 입력해주세요.';
+    } else {
+      empty.style.display = 'none';
+      priceBody.innerHTML = inputs.map(it=>{
+        const own = priceSnapshots[valDate] && priceSnapshots[valDate][it.code];
+        const pf = priceFor(it.code, valDate);
+        const cur = pf ? pf.price : (it.totalQty ? it.cost / it.totalQty : 0);
+        const avg = it.totalQty ? it.cost / it.totalQty : 0;
+        const val = cur * it.totalQty;
+        const rel = avg ? (cur - avg) / avg * 100 : 0;
+        const note = own > 0 ? '' : (pf ? `<span class="ret-src">이전 단가 ${fmtDot(pf.date)}</span>` : '<span class="ret-src">단가 없음 · 매입가 대체</span>');
+        return `<tr>
+          <td>${vEsc(it.name)} <span class="name-code">${vEsc(it.code)}</span></td>
+          <td>${it.perAcct.map(p=>`<span class="grp-badge" style="border-color:${ACCT_COLOR[p.account]}55;color:${ACCT_COLOR[p.account]}">${vEsc(p.account)} ${Number(p.qty).toLocaleString()}</span>`).join('')}</td>
+          <td><input class="edit-input" type="number" min="0" step="any" data-val-code="${vEsc(it.code)}" value="${own > 0 ? own : ''}" placeholder="${pf ? pf.price : ''}" style="width:130px;">${note}</td>
+          <td>${won(val)}</td>
+          <td class="${clsFor(rel)}">${avg ? pct(rel) : '–'}</td>
+        </tr>`;
+      }).join('');
+      priceBody.querySelectorAll('[data-val-code]').forEach(inp=>{
+        inp.addEventListener('change', ()=>{
+          const code = inp.dataset.valCode, v = parseFloat(inp.value);
+          if(isFinite(v) && v > 0){ (priceSnapshots[valDate] = priceSnapshots[valDate] || {})[code] = v; }
+          else if(priceSnapshots[valDate]){ delete priceSnapshots[valDate][code]; if(!Object.keys(priceSnapshots[valDate]).length) delete priceSnapshots[valDate]; }
+          saveValuation(); refreshAfterValuation();
+        });
+      });
+    }
+  }
+  if(!typing){
+    const names = getAccountNames();
+    let tVal=0, tCash=0, tInv=0;
+    acctBody.innerHTML = names.map(n=>{
+      const a = snap.accounts[n];
+      const total = a.valuation + a.cash, gain = a.valuation - a.invested;
+      const ret = a.invested ? gain / a.invested * 100 : 0;
+      tVal += a.valuation; tCash += a.cash; tInv += a.invested;
+      const flag = a.missing ? `<span class="ret-src">단가없음 ${a.missing}</span>` : (a.stale ? `<span class="ret-src">이전 단가 ${a.stale}</span>` : '');
+      return `<tr>
+        <td><span class="grp-badge" style="border-color:${ACCT_COLOR[n]}55;color:${ACCT_COLOR[n]}">${vEsc(n)}</span></td>
+        <td>${won(a.valuation)}${flag}</td>
+        <td><input class="edit-input" type="number" min="0" step="1" data-val-cash="${vEsc(n)}" value="${a.cash || ''}" placeholder="0" style="width:130px;"></td>
+        <td style="font-weight:600;">${won(total)}</td>
+        <td>${won(a.invested)}</td>
+        <td class="${clsFor(gain)}">${a.count ? (gain>0?'+':'') + won(gain) : '–'}</td>
+        <td class="${clsFor(ret)}">${a.count ? pct(ret) : '–'}</td>
+      </tr>`;
+    }).join('');
+    const tGain = tVal - tInv, tRet = tInv ? tGain / tInv * 100 : 0;
+    totalRow.innerHTML = `<td style="font-weight:600;">합계</td><td>${won(tVal)}</td><td>${won(tCash)}</td><td style="font-weight:700;">${won(tVal + tCash)}</td><td>${won(tInv)}</td><td class="${clsFor(tGain)}">${(tGain>0?'+':'') + won(tGain)}</td><td class="${clsFor(tRet)}">${tInv ? pct(tRet) : '–'}</td>`;
+    acctBody.querySelectorAll('[data-val-cash]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const n = inp.dataset.valCash, v = parseFloat(inp.value);
+        if(isFinite(v) && v > 0){ (cashSnapshots[valDate] = cashSnapshots[valDate] || {})[n] = v; }
+        else if(cashSnapshots[valDate]){ delete cashSnapshots[valDate][n]; if(!Object.keys(cashSnapshots[valDate]).length) delete cashSnapshots[valDate]; }
+        saveValuation(); refreshAfterValuation();
+      });
+    });
+  }
+  renderValStatus();
+}
+
+function renderValStatus(){
+  const dates = Array.from(new Set([...Object.keys(priceSnapshots), ...Object.keys(cashSnapshots)])).filter(hasValuationData).sort().reverse();
+  const body = vEl('valStatusTable'), empty = vEl('valStatusEmpty');
+  if(!dates.length){ body.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  body.innerHTML = dates.map(d=>{
+    const need = priceInputsFor(d).length;
+    const have = priceInputsFor(d).filter(it=> priceSnapshots[d] && priceSnapshots[d][it.code] > 0).length;
+    const snap = valuationSnapshot(d);
+    const total = Object.values(snap.accounts).reduce((s,a)=> s + a.valuation + a.cash, 0);
+    return `<tr>
+      <td><span class="date-link" data-val-go="${d}" style="cursor:pointer;font-family:var(--mono);text-decoration:underline dotted;color:${d===valDate?'var(--gold)':'var(--ink)'};">${fmtDot(d)}</span></td>
+      <td>${have} / ${need}</td>
+      <td>${won(total)}</td>
+      <td><button class="btn-danger" data-val-del="${d}">입력값 삭제</button></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('[data-val-go]').forEach(el=> el.addEventListener('click', ()=>{ valDate = el.dataset.valGo; renderValuationPage(); }));
+  body.querySelectorAll('[data-val-del]').forEach(btn=> btn.addEventListener('click', ()=>{
+    const d = btn.dataset.valDel;
+    if(!confirm(`${fmtDot(d)} 기준일에 입력한 단가·예수금을 모두 삭제할까요? (기준일 자체는 유지됩니다)`)) return;
+    delete priceSnapshots[d]; delete cashSnapshots[d];
+    saveValuation(); refreshAfterValuation();
+  }));
+}
+
+/* ---- date controls ---- */
+vEl('valDate').addEventListener('change', ()=>{ valDate = vEl('valDate').value || null; renderValuationPage(); });
+function addDateAndSelect(d){
+  if(!d){ alert('날짜를 선택해주세요.'); return; }
+  addBaseDate(d); valDate = d; refreshAfterValuation();
+}
+vEl('valAddDate').addEventListener('click', ()=>{ addDateAndSelect(vEl('valNewDate').value); vEl('valNewDate').value = ''; });
+vEl('valLastMonthEnd').addEventListener('click', ()=>{ const t = new Date(); addDateAndSelect(lastDayOf(t.getFullYear(), t.getMonth() - 1)); });
+vEl('valThisMonthEnd').addEventListener('click', ()=>{ const t = new Date(); addDateAndSelect(lastDayOf(t.getFullYear(), t.getMonth())); });
+
+/* ---- Excel/CSV upload ---- */
+const VAL_HEADERS = {
+  date: ['기준일','날짜','일자','date'],
+  code: ['종목코드','코드','code'],
+  price: ['단가','현재가','종가','가격','price'],
+  account: ['계좌','account'],
+  cash: ['예수금','cash'],
+};
+const valFile = vEl('valFileInput'), valBtn = vEl('valUploadBtn');
+valFile.addEventListener('change', ()=>{ valBtn.disabled = !valFile.files.length; vEl('valUploadStatus').textContent = ''; });
+function normalizeCode(raw){
+  let c = String(raw == null ? '' : raw).trim().toUpperCase();
+  if(/^\d{1,5}$/.test(c)) c = c.padStart(6, '0');   // spreadsheets drop leading zeros: 5930 → 005930
+  return c;
+}
+function toNumber(raw){ const n = parseFloat(String(raw == null ? '' : raw).replace(/,/g,'')); return isFinite(n) ? n : NaN; }
+
+valBtn.addEventListener('click', async ()=>{
+  const status = vEl('valUploadStatus'), file = valFile.files[0];
+  if(!file) return;
+  valBtn.disabled = true; status.style.color = 'var(--ink-dim)'; status.textContent = '파일 읽는 중...';
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array', cellDates:true });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+    if(!rows.length){ status.textContent = '업로드할 데이터가 없습니다. 첫 행이 머리글인지 확인해주세요.'; status.style.color = 'var(--down)'; valBtn.disabled = false; return; }
+
+    let priceCount = 0, cashCount = 0, skipped = 0, newDates = 0, lastDate = null;
+    const skipNotes = [];
+    rows.forEach((row, i)=>{
+      const date = normalizeExcelDate(pickField(row, VAL_HEADERS.date));
+      const code = normalizeCode(pickField(row, VAL_HEADERS.code));
+      const price = toNumber(pickField(row, VAL_HEADERS.price));
+      let account = String(pickField(row, VAL_HEADERS.account) || '').trim();
+      const cashRaw = pickField(row, VAL_HEADERS.cash);
+      const cash = toNumber(cashRaw);
+      const knownAcct = account && getAccountNames().find(a=> account === a || account.includes(a) || a.includes(account));
+      if(knownAcct) account = knownAcct;
+
+      const isPrice = code && price > 0;
+      const isCash = account && getAccountNames().includes(account) && String(cashRaw).trim() !== '' && cash >= 0;
+      if(!date || (!isPrice && !isCash)){ skipped++; if(skipNotes.length < 3) skipNotes.push(`${i+2}행`); return; }
+
+      if(addBaseDate(date)) newDates++;
+      if(isPrice){ (priceSnapshots[date] = priceSnapshots[date] || {})[code] = price; priceCount++; }
+      if(isCash){
+        if(cash > 0){ (cashSnapshots[date] = cashSnapshots[date] || {})[account] = cash; }
+        else if(cashSnapshots[date]){ delete cashSnapshots[date][account]; if(!Object.keys(cashSnapshots[date]).length) delete cashSnapshots[date]; }
+        cashCount++;
+      }
+      if(!lastDate || date > lastDate) lastDate = date;
+    });
+
+    if(priceCount || cashCount){ saveValuation(); if(lastDate) valDate = lastDate; refreshAfterValuation(); }
+    status.textContent = `업로드 완료 — 단가 ${priceCount}건, 예수금 ${cashCount}건` + (newDates ? `, 새 기준일 ${newDates}건 추가` : '') +
+      `, 형식 오류로 제외 ${skipped}건` + (skipped ? ` (${skipNotes.join(', ')}${skipped > skipNotes.length ? ' 등' : ''})` : '');
+    status.style.color = (priceCount || cashCount) ? 'var(--up)' : 'var(--down)';
+    valFile.value = ''; valBtn.disabled = true;
+  }catch(err){
+    console.error('월말 평가금 업로드 오류:', err);
+    status.textContent = '업로드 중 오류가 발생했습니다: ' + err.message; status.style.color = 'var(--down)'; valBtn.disabled = false;
+  }
+});
+
+vEl('valTemplateBtn').addEventListener('click', ()=>{
+  const acct = getAccountNames()[0] || '개인연금';
+  const csv = '﻿' + ['기준일,종목코드,종목명,단가,계좌,예수금',
+    '2026-09-30,360750,TIGER 미국S&P500,18500,,',
+    '2026-09-30,005930,삼성전자,71000,,',
+    `2026-09-30,,,,${acct},50000`].join('\r\n');
+  try{
+    const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = '월말평가금_양식.csv';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }catch(e){ console.error('template download failed:', e); alert('양식 다운로드에 실패했습니다.'); }
+});
+
+window.renderValuationPage = renderValuationPage;
+try{ renderValuationPage(); }catch(e){ console.error('initial renderValuationPage failed:', e); }
+document.querySelector('.nav-item[data-page="valuation"]').addEventListener('click', ()=>{
+  try{ renderValuationPage(); }catch(e){ console.error('renderValuationPage failed:', e); }
+});
+}catch(err){
+  console.error('Month-end valuation setup error:', err);
+}
+
+/* ============================================================
    SETTINGS & DRIVE SYNC — run independently of the block above,
    so a failure in dashboard/registry/transactions/dividends
    rendering never prevents Settings or Drive sync from working.
@@ -2497,11 +3416,23 @@ renderPageOrderSettings();
    ============================================================ */
 function refreshAccountDependentUI(){
   populateAccountSelects();
-  if(typeof renderPrincipalPage === 'function') renderPrincipalPage();
-  if(typeof renderRegistryPage === 'function') renderRegistryPage();
-  if(typeof renderDividendsPage === 'function') renderDividendsPage();
-  if(typeof triggerRender === 'function') triggerRender();
+  const run = fn => { try{ if(typeof fn === 'function') fn(); }catch(e){ console.error('refresh failed:', e); } };
+  run(window.renderPrincipalPage || (typeof renderPrincipalPage === 'function' ? renderPrincipalPage : null));
+  run(typeof renderPrincipalEntryTable === 'function' ? renderPrincipalEntryTable : null);
+  run(typeof renderRegistryPage === 'function' ? renderRegistryPage : null);
+  run(typeof renderTxTable === 'function' ? renderTxTable : null);
+  run(typeof renderTxSummary === 'function' ? renderTxSummary : null);
+  run(typeof renderDividendsPage === 'function' ? renderDividendsPage : null);
+  run(typeof triggerRender === 'function' ? triggerRender : null);
+  run(window.renderRetirementPage);
+  run(window.renderValuationPage);
 }
+// Called after the account list itself changed (rename / add from 은퇴 설계): refresh settings list + everything else.
+function afterAccountsChanged(){
+  try{ if(typeof renderAccountSettings === 'function') renderAccountSettings(); }catch(e){ console.error(e); }
+  refreshAccountDependentUI();
+}
+window.afterAccountsChanged = afterAccountsChanged;
 
 function saveAccountList(){
   localStorage.setItem('accountList', JSON.stringify(accountList));
@@ -2521,6 +3452,7 @@ function renderAccountSettings(){
         <span class="cat-name">${a.name}</span>
       </div>
       <div class="cat-actions">
+        <button class="icon-btn" data-acct-rename="${i}" title="계좌 이름 변경 (앱 전체에 반영)">이름 변경</button>
         <button class="icon-btn" data-acct-up="${i}" ${i===0?'disabled':''} title="위로">↑</button>
         <button class="icon-btn" data-acct-down="${i}" ${i===accountList.length-1?'disabled':''} title="아래로">↓</button>
         <button class="btn-danger" data-del-acct="${i}">삭제</button>
@@ -2533,6 +3465,16 @@ function renderAccountSettings(){
       accountList[i].color = inp.value;
       saveAccountList();
       refreshAccountDependentUI();
+    });
+  });
+  container.querySelectorAll('[data-acct-rename]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const old = accountList[parseInt(btn.dataset.acctRename,10)].name;
+      const nn = prompt(`"${old}" 계좌의 새 이름을 입력하세요.\n(원금·거래내역·배당금·등록 종목·은퇴 설계 등 앱 전체의 계좌명이 함께 바뀝니다)`, old);
+      if(nn === null) return;
+      const res = renameAccount(old, nn);
+      if(!res.ok){ if(res.msg) alert(res.msg); return; }
+      renderAccountSettings(); refreshAccountDependentUI();
     });
   });
   container.querySelectorAll('[data-acct-up]').forEach(btn=>{
@@ -2659,7 +3601,7 @@ document.getElementById('addCategory').addEventListener('click', ()=>{
 const GOOGLE_CLIENT_ID = '48865465302-osuijlbusfmfit9ju16uuqlo8nb19smf.apps.googleusercontent.com'; // 가계부(my-budget)와 같은 저장소/주소에 올리면 그 앱에서 쓰던 클라이언트 ID를 그대로 재사용할 수 있습니다.
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME = 'asset-dashboard-sync.json';
-const SYNC_KEYS = ['principalEntries','customPrincipalDates','transactions','userDividends','userStockRegistry','categoryList','accountList','pageOrder'];
+const SYNC_KEYS = ['principalEntries','customPrincipalDates','transactions','userDividends','userStockRegistry','retirementPlan','priceSnapshots','cashSnapshots','categoryList','accountList','pageOrder'];
 
 let driveAccessToken = null;
 let driveFileId = localStorage.getItem('driveFileId') || null;
