@@ -1045,7 +1045,9 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>if(typeof Chart==='undefined'){ document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>'); }</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>if(typeof XLSX==='undefined'){ document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>'); }</script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 
@@ -1481,11 +1483,28 @@ let trendChartInst=null, monthlyBarInst=null, acctDonutInst=null, assetDonutInst
 
 // Create a chart but never let a failure here (bad canvas, Chart.js quirk, etc.) take down
 // the rest of the script — later wiring (버튼, 페이지 전환 등) must always still run.
-function safeNewChart(canvasId, config){
+function setChartMsg(canvasId, msg, isError){
   try{
-    return new Chart(document.getElementById(canvasId), config);
+    const cv = document.getElementById(canvasId); if(!cv || !cv.parentNode) return;
+    let el = cv.parentNode.querySelector('.chart-msg');
+    if(!msg){ if(el) el.remove(); return; }
+    if(!el){ el = document.createElement('div'); el.className = 'chart-msg'; cv.parentNode.appendChild(el); }
+    el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;font-size:12.5px;line-height:1.6;pointer-events:none;color:' + (isError ? '#c8433a' : '#8a8d99');
+    el.textContent = msg;
+  }catch(e){}
+}
+function safeNewChart(canvasId, config){
+  if(typeof Chart === 'undefined'){
+    setChartMsg(canvasId, '차트 라이브러리(Chart.js)를 불러오지 못했습니다. 인터넷 연결이나 보안 프로그램의 cdnjs·jsdelivr 차단 여부를 확인해주세요.', true);
+    return null;
+  }
+  try{
+    const inst = new Chart(document.getElementById(canvasId), config);
+    setChartMsg(canvasId, '');
+    return inst;
   }catch(err){
     console.error('Chart creation failed for #' + canvasId + ':', err);
+    setChartMsg(canvasId, '차트를 그리는 중 오류가 발생했습니다: ' + (err && err.message ? err.message : err), true);
     return null;
   }
 }
@@ -1522,6 +1541,7 @@ function renderTrendCharts(){
   const labelOf = d => d.slice(2,4)+'.'+d.slice(5,7) + (isMonthEnd(d) ? '' : '.'+d.slice(8,10));
   const labels = dates.map(labelOf);
   const rows = dates.map(d=>{ const am = getAccountsForDate(d); const per = {}; names.forEach(n=>{ per[n] = acctValueAt(n, d, am); }); return per; });
+  const fin = v => (typeof v === 'number' && isFinite(v)) ? v : 0;
   const principalLine = rows.map(r=> names.reduce((s,n)=>s+r[n].principal,0));
   const totalVal = rows.map(r=> names.reduce((s,n)=>s+r[n].value,0));
   const anyEstimated = rows.some(r=> names.some(n=> r[n].estimated));
@@ -1529,10 +1549,10 @@ function renderTrendCharts(){
 
   const axisFmt = v => v >= 1e8 ? (v/1e8).toFixed(1).replace(/\.0$/,'')+'억' : (v/1e4).toLocaleString('ko-KR')+'만';
   const barSets = names.map(n=>({
-    type:'bar', label:n, data: rows.map(r=>r[n].value), backgroundColor: ACCT_COLOR[n], borderWidth:0, stack:'acct', maxBarThickness:38, order:2,
+    type:'bar', label:n, data: rows.map(r=>fin(r[n].value)), backgroundColor: ACCT_COLOR[n], borderWidth:0, stack:'acct', maxBarThickness:38, order:2,
     _est: rows.map(r=>r[n].estimated)
   }));
-  const lineSet = { type:'line', label:'누적 원금', data: principalLine, borderColor:'#20232b', backgroundColor:'transparent', borderDash:[5,3],
+  const lineSet = { type:'line', label:'누적 원금', data: principalLine.map(fin), borderColor:'#20232b', backgroundColor:'transparent', borderDash:[5,3],
     borderWidth:1.8, pointRadius:2, pointHoverRadius:4, tension:.15, order:1, stack:undefined };
   trendChartInst = safeNewChart('trendChart', {
     type:'bar',
@@ -1563,7 +1583,7 @@ function renderTrendCharts(){
   });
   monthlyBarInst = safeNewChart('monthlyBar', {
     type:'bar',
-    data:{ labels, datasets:[{ data: monthlyReturns,
+    data:{ labels, datasets:[{ data: monthlyReturns.map(fin),
       backgroundColor: monthlyReturns.map(v=> v>=0 ? 'rgba(200,67,58,0.75)' : 'rgba(53,104,201,0.75)'), borderRadius:3, maxBarThickness:20 }] },
     options:{
       responsive:true, maintainAspectRatio:false,
@@ -1607,7 +1627,7 @@ function donut(id, existing, labels, data, colors){
   if(existing) existing.destroy();
   return safeNewChart(id, {
     type:'doughnut',
-    data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:'#ffffff', borderWidth:3, hoverOffset:6 }] },
+    data:{ labels, datasets:[{ data: data.map(v=> (typeof v==='number'&&isFinite(v))?v:0), backgroundColor:colors, borderColor:'#ffffff', borderWidth:3, hoverOffset:6 }] },
     options:{
       responsive:true, maintainAspectRatio:false, cutout:'68%',
       plugins:{
@@ -1687,6 +1707,7 @@ function renderDashboard(requestedIso){
   acctDonutInst = donut('acctDonut', acctDonutInst, accts.map(a=>a.name), accts.map(a=>a.valuation), accts.map(a=>a.color));
   const assetClasses = computeAssetClasses(currentHoldings);
   assetDonutInst = donut('assetDonut', assetDonutInst, assetClasses.map(a=>a.name), assetClasses.map(a=>a.valuation), assetClasses.map(a=>a.color));
+  if(!assetClasses.length && typeof Chart !== 'undefined') setChartMsg('assetDonut', '보유 종목이 없습니다. 매수·매도 내역을 입력하면 자산군 비중이 표시됩니다.', false);
 
   // ---- account cards ----
   document.getElementById('acctCards').innerHTML = accts.map(a=>{
