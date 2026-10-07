@@ -290,7 +290,7 @@
       </div>
       <div class="nav-item" data-page="transactions">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 8l-4 4 4 4M17 8l4 4-4 4M14 4l-4 16"/></svg>
-        매수·매도 관리
+        월말 보유 관리
       </div>
       <div class="nav-item" data-page="dividends">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1.4 1.1-2.5 2.5-2.5s2.5 .8 2.5 2c0 1.6-2 1.8-2.5 2-1 .4-2.5 .8-2.5 2.5 0 1.2 1.1 2 2.5 2s2.5-1.1 2.5-2.5"/></svg>
@@ -348,7 +348,7 @@
         <div class="card" style="text-align:center;padding:48px 24px;">
           <div style="font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:10px;">표시할 데이터가 없습니다</div>
           <p style="color:var(--ink-dim);font-size:13.5px;line-height:1.7;max-width:480px;margin:0 auto 20px;">
-            입출금 내역(원금 관리), 매수·매도 내역, 월말 평가금 중 하나를 입력하면 대시보드가 표시됩니다.
+            입출금 내역(원금 관리), 월말 보유 종목, 월말 평가금 중 하나를 입력하면 대시보드가 표시됩니다.
           </p>
           <button class="btn btn-primary" id="goToPrincipalBtn" type="button">원금 관리로 이동</button>
         </div>
@@ -422,7 +422,7 @@
           <div class="pills" id="acctFilter" style="margin-bottom:16px;"></div>
           <div class="card table-scroll">
             <table>
-              <thead><tr><th>계좌</th><th>종목명</th><th>수량</th><th>매수단가</th><th>투자금</th><th>현재가</th><th>평가금</th><th>수익금</th><th>수익률</th></tr></thead>
+              <thead><tr><th>계좌</th><th>종목명</th><th>수량</th><th>평균단가</th><th>투자금</th><th>현재가</th><th>평가금</th><th>수익금</th><th>수익률</th></tr></thead>
               <tbody id="holdingsTable"></tbody>
             </table>
           </div>
@@ -517,7 +517,7 @@
         <div class="wrap">
           <div class="eyebrow">Holdings Registry</div>
           <h2>종목 관리</h2>
-          <p>계좌별로 보유(또는 관리하고 싶은) 종목을 미리 등록해둘 수 있습니다. 등록한 종목은 배당금 등록, 매수·매도 등록의 종목코드 자동조회에 즉시 반영됩니다.</p>
+          <p>계좌별로 보유(또는 관리하고 싶은) 종목을 미리 등록해둘 수 있습니다. 등록한 종목은 배당금 등록, 월말 보유 관리의 종목코드 자동조회에 즉시 반영됩니다.</p>
         </div>
       </div>
       <div class="wrap">
@@ -567,27 +567,23 @@
       </div>
     </section>
 
-    <!-- ============ PAGE: TRANSACTIONS ============ -->
+    <!-- ============ PAGE: 월말 보유 관리 (id=page-transactions 유지) ============ -->
     <section class="page" id="page-transactions" style="padding:0;border:none;">
       <div class="page-head">
         <div class="wrap">
-          <div class="eyebrow">Trade Ledger</div>
-          <h2>매수·매도 관리</h2>
-          <p>매수/매도 거래를 하나씩 입력하거나, 엑셀(.xlsx/.xls/.csv) 파일로 한 번에 업로드할 수 있습니다. 입력한 내역은 브라우저에 보관되며 별도의 거래 장부로 관리됩니다.</p>
+          <div class="eyebrow">Month-end Holdings</div>
+          <h2>월말 보유 관리</h2>
+          <p>매달 말에 <b>종목이 바뀐 것만</b> 입력하세요. 새로 산 종목, 수량이 바뀐 종목, 전량 매도한 종목(수량 0)만 넣으면 나머지 종목은 전달 보유 상태가 그대로 이어집니다. 월말 단가는 "월말 평가금" 페이지에서 입력합니다.</p>
         </div>
       </div>
       <div class="wrap">
         <section>
           <div class="form-card">
             <div class="form-grid" style="align-items:start;">
-              <div class="field"><label>날짜</label><input type="date" id="txDate"></div>
+              <div class="field"><label>날짜 (월말)</label><input type="date" id="txDate"></div>
               <div class="field">
                 <label>계좌</label>
                 <select id="txAccount"></select>
-              </div>
-              <div class="field">
-                <label>구분</label>
-                <select id="txType"><option value="매수">매수</option><option value="매도">매도</option></select>
               </div>
               <div class="field">
                 <label>종목코드</label>
@@ -595,16 +591,14 @@
                 <div id="txCodeStatus" style="font-family:var(--mono);font-size:10.5px;margin-top:4px;min-height:13px;"></div>
               </div>
               <div class="field"><label>종목명</label><input type="text" id="txName" placeholder="종목코드 입력 시 자동 조회"></div>
-              <div class="field"><label>수량</label><input type="number" id="txQty" min="0" step="1"></div>
-            </div>
-            <div class="form-grid" style="grid-template-columns:repeat(2,1fr);max-width:520px;margin-top:12px;">
-              <div class="field"><label>단가</label><input type="number" id="txPrice" min="0" step="1"></div>
-              <div class="field"><label>거래금액 (자동계산)</label><input type="text" id="txAmount" disabled placeholder="0"></div>
+              <div class="field"><label>수량 (전량 매도 = 0)</label><input type="number" id="txQty" min="0" step="1"></div>
+              <div class="field"><label>투자금 합계 (원)</label><input type="number" id="txInvested" min="0" step="1" placeholder="총 투자금"></div>
             </div>
             <div class="btn-row">
-              <button class="btn btn-primary" id="addTx">거래 추가</button>
-              <span class="toast" id="txToast">추가되었습니다 ✓</span>
+              <button class="btn btn-primary" id="addTx">저장</button>
+              <span class="toast" id="txToast">저장되었습니다 ✓</span>
             </div>
+            <div class="date-hint" style="margin-top:10px;">※ 같은 날짜·계좌·종목을 다시 저장하면 덮어씁니다. 저장한 내용은 그 날짜부터 다음 입력 전까지 이어집니다.</div>
           </div>
         </section>
 
@@ -615,7 +609,7 @@
           </div>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
-              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자), <b>계좌</b>, <b>구분</b>(매수/매도), <b>종목코드</b>, <b>종목명</b>(비워두면 종목코드로 자동 조회), <b>수량</b>, <b>단가</b>. 계좌명은 <span id="txUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자·기준일), <b>계좌</b>, <b>종목코드</b>, <b>종목명</b>(비워두면 코드로 자동 조회), <b>수량</b>(0이면 전량 매도), <b>투자금</b>(또는 투자금액·매수금액·매입금액). 계좌명은 <span id="txUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
             <div class="form-grid" style="grid-template-columns:auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
@@ -633,28 +627,40 @@
 
         <section>
           <div class="sec-head">
-            <div class="sec-title">거래 요약</div>
-            <div class="sec-sub">입력된 전체 거래 기준</div>
+            <div class="sec-title">월말 보유 현황 (이월 반영)</div>
+            <div class="sec-sub">날짜를 고르면 그 시점의 계좌별 보유 종목을 보여줍니다</div>
+          </div>
+          <div class="form-card" style="margin-bottom:16px;">
+            <div class="form-grid" style="grid-template-columns:auto 1fr;align-items:end;">
+              <div class="field" style="min-width:220px;"><label>조회 날짜</label><select id="txViewDate"></select></div>
+            </div>
           </div>
           <div class="summary-strip">
-            <div class="stat-card"><div class="label">총 매수금액</div><div class="value pos" id="sumBuy">0</div></div>
-            <div class="stat-card"><div class="label">총 매도금액</div><div class="value down" id="sumSell">0</div></div>
-            <div class="stat-card"><div class="label">순매수금액</div><div class="value" id="sumNet">0</div></div>
-            <div class="stat-card"><div class="label">거래 건수</div><div class="value" id="sumCount">0</div></div>
+            <div class="stat-card"><div class="label">보유 종목 수</div><div class="value" id="sumHoldCount">0</div></div>
+            <div class="stat-card"><div class="label">투자금 합계</div><div class="value pos" id="sumHoldInvested">0</div></div>
+            <div class="stat-card"><div class="label">입력 건수 (전체)</div><div class="value" id="sumCount">0</div></div>
+            <div class="stat-card"><div class="label">최근 입력일</div><div class="value" id="sumLast" style="font-size:16px;">–</div></div>
+          </div>
+          <div class="card table-scroll" style="margin-top:16px;">
+            <table>
+              <thead><tr><th>계좌</th><th>종목</th><th>수량</th><th>투자금</th><th>평균단가</th></tr></thead>
+              <tbody id="txViewTable"></tbody>
+            </table>
+            <div class="empty-state" id="txViewEmpty" style="display:none;">이 날짜까지 입력된 보유 종목이 없습니다.</div>
           </div>
         </section>
 
         <section>
           <div class="sec-head">
-            <div class="sec-title">거래 내역</div>
-            <div class="sec-sub">최신순</div>
+            <div class="sec-title">입력 내역</div>
+            <div class="sec-sub">최신순 · 직접 입력한 변동분</div>
           </div>
           <div class="card table-scroll">
             <table>
-              <thead><tr><th>날짜</th><th>계좌</th><th>구분</th><th>종목</th><th>수량</th><th>단가</th><th>거래금액</th><th></th></tr></thead>
+              <thead><tr><th>날짜</th><th>계좌</th><th>종목</th><th>수량</th><th>투자금</th><th></th></tr></thead>
               <tbody id="txTable"></tbody>
             </table>
-            <div class="empty-state" id="txEmpty" style="display:none;">입력된 거래 내역이 없습니다.</div>
+            <div class="empty-state" id="txEmpty" style="display:none;">입력된 내역이 없습니다.</div>
           </div>
         </section>
       </div>
@@ -803,7 +809,7 @@
         <div class="wrap">
           <div class="eyebrow">Month-end Valuation</div>
           <h2>월말 평가금</h2>
-          <p>매달 말일 기준으로 <b>종목별 단가만</b> 입력하면, 그 날짜까지의 매수·매도 내역으로 계좌별 보유 수량을 계산해 평가금을 자동으로 만듭니다. 단가는 계좌와 상관없이 종목당 하나만 입력하면 되고, 결과는 대시보드와 은퇴 설계에 반영됩니다.</p>
+          <p>매달 말일 기준으로 <b>종목별 단가만</b> 입력하면, 월말 보유 관리에 입력한 종목(변동 없는 종목은 자동 이월)의 수량으로 계좌별 평가금을 자동으로 만듭니다. 단가는 계좌와 상관없이 종목당 하나만 입력하면 되고, 결과는 대시보드와 은퇴 설계에 반영됩니다.</p>
         </div>
       </div>
       <div class="wrap">
@@ -811,7 +817,7 @@
         <section>
           <div class="sec-head">
             <div class="sec-title">입력할 날짜 선택</div>
-            <div class="sec-sub">매월 말일이 자동으로 나열됩니다 (입출금·매수매도 입력월부터)</div>
+            <div class="sec-sub">매월 말일이 자동으로 나열됩니다 (입출금·보유 종목 입력월부터)</div>
           </div>
           <div class="form-card">
             <div class="form-grid" style="grid-template-columns:auto auto auto auto 1fr;align-items:end;">
@@ -1061,7 +1067,7 @@
    always works even if other features degrade.
    ============================================================ */
 const DEFAULT_PAGE_ORDER = ['dashboard','principal','holdings','transactions','dividends','valuation','retirement','settings'];
-const PAGE_LABELS = { dashboard:'대시보드', principal:'원금 관리', holdings:'종목 관리', transactions:'매수·매도 관리', dividends:'배당금 관리', valuation:'월말 평가금', retirement:'은퇴 설계', settings:'설정' };
+const PAGE_LABELS = { dashboard:'대시보드', principal:'원금 관리', holdings:'종목 관리', transactions:'월말 보유 관리', dividends:'배당금 관리', valuation:'월말 평가금', retirement:'은퇴 설계', settings:'설정' };
 let pageOrder = [];
 try{ pageOrder = JSON.parse(localStorage.getItem('pageOrder') || 'null'); }catch(e){ pageOrder = null; }
 if(!Array.isArray(pageOrder)) pageOrder = null;
@@ -1205,12 +1211,12 @@ try{ localStorage.removeItem('customPrincipalDates'); }catch(e){}
 let userStockRegistry = [];
 try{ userStockRegistry = JSON.parse(localStorage.getItem('userStockRegistry') || '[]'); }catch(e){ userStockRegistry = []; }
 
-// 자동 날짜 목록: 가장 이른 입출금·매수매도·평가금 입력월부터 이번 달까지의 월말(이번 달은 오늘)
+// 자동 날짜 목록: 가장 이른 입출금·보유 종목·평가금 입력월부터 이번 달까지의 월말(이번 달은 오늘)
 // + 평가금을 직접 입력한 날짜. 별도의 설정이 필요 없다.
 function getDataStartDate(){
   const ds = [];
   try{ (principalEntries||[]).forEach(e=>{ if(e && e.date) ds.push(e.date); }); }catch(e){}
-  try{ (transactions||[]).forEach(e=>{ if(e && e.date) ds.push(e.date); }); }catch(e){}
+  try{ (holdingEntries||[]).forEach(e=>{ if(e && e.date) ds.push(e.date); }); }catch(e){}
   try{ Object.keys(priceSnapshots||{}).forEach(d=>ds.push(d)); }catch(e){}
   try{ Object.keys(cashSnapshots||{}).forEach(d=>ds.push(d)); }catch(e){}
   const ok = ds.filter(d=> /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
@@ -1301,8 +1307,13 @@ async function lookupStockName(codeRaw){
 let principalEntries = [];
 try{ principalEntries = JSON.parse(localStorage.getItem('principalEntries') || '[]'); }catch(e){ principalEntries = []; }
 
-let transactions = [];
-try{ transactions = JSON.parse(localStorage.getItem('transactions') || '[]'); }catch(e){ transactions = []; }
+// 매수·매도 장부는 폐지됨: 월말 보유 현황으로 대체 (예전 장부는 삭제)
+try{ localStorage.removeItem('transactions'); }catch(e){}
+// 월말 보유 변동 내역: { id, date, account, code, name, qty, invested(총 투자금) }
+// 같은 계좌·종목은 가장 최근 입력(날짜 ≤ 조회일)이 그 시점의 보유 상태이고, 입력하지 않은 종목은 자동 이월된다. qty 0 = 전량 매도.
+let holdingEntries = [];
+try{ holdingEntries = JSON.parse(localStorage.getItem('holdingEntries') || '[]'); }catch(e){ holdingEntries = []; }
+if(!Array.isArray(holdingEntries)) holdingEntries = [];
 
 // declared at top level (not inside the big init try-block) so renameAccount() and the
 // 은퇴 설계 page can reach it even if dashboard initialization fails.
@@ -1325,35 +1336,21 @@ try{ cashSnapshots = JSON.parse(localStorage.getItem('cashSnapshots') || '{}') |
 });
 ['quoteConfig','quoteCache','accountCash'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} }); // leftovers of the removed live-quote feature
 
-// Net holdings per account as of a date, from the 매수·매도 ledger (average-cost method; a sell reduces cost at the average cost).
+// 날짜 기준 계좌별 보유 종목: 월말 보유 변동 내역에서 계좌·종목별로 (날짜 ≤ 조회일) 가장 최근 입력을 사용 → 입력 없는 종목은 자동 이월.
 function computeNetHoldings(asOf){
-  const byAcct = {};
-  const txs = [...transactions]
-    .filter(t=> !asOf || String(t.date||'') <= asOf)
-    .sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')) || (a.id - b.id));
-  txs.forEach(t=>{
-    if(!t.code || t.code === '-') return;
-    const qty = Number(t.qty), price = Number(t.price);
-    if(!(qty > 0) || !(price >= 0)) return;
-    const code = String(t.code).toUpperCase();
-    const m = byAcct[t.account] || (byAcct[t.account] = new Map());
-    const h = m.get(code) || { code, name:t.name || code, qty:0, invested:0 };
-    if(t.name && t.name !== '(종목명 미확인)') h.name = t.name;
-    if(t.type === '매수'){ h.qty += qty; h.invested += qty * price; }
-    else if(t.type === '매도'){
-      const sell = Math.min(qty, h.qty);
-      const avg = h.qty > 0 ? h.invested / h.qty : 0;
-      h.qty -= sell; h.invested -= avg * sell;
-    }
-    m.set(code, h);
-  });
+  const latest = new Map();
+  [...holdingEntries]
+    .filter(e=> e && e.code && e.account && (!asOf || String(e.date||'') <= asOf))
+    .sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')) || ((a.id||0) - (b.id||0)))
+    .forEach(e=>{ latest.set(e.account + '\u0000' + String(e.code).toUpperCase(), e); });
   const out = {};
-  Object.keys(byAcct).forEach(a=>{
-    out[a] = Array.from(byAcct[a].values()).filter(h=> h.qty > 1e-9).map(h=>{
-      const reg = (userStockRegistry||[]).find(s=> s.account === a && String(s.code).toUpperCase() === h.code);
-      const nm = reg ? reg.name : (CATALOG[h.code] ? CATALOG[h.code].name : h.name);
-      return { ...h, name: nm };
-    });
+  latest.forEach(e=>{
+    const qty = Number(e.qty), inv = Number(e.invested);
+    if(!(qty > 1e-9)) return;
+    const code = String(e.code).toUpperCase();
+    const reg = (userStockRegistry||[]).find(s=> s.account === e.account && String(s.code).toUpperCase() === code);
+    const nm = reg ? reg.name : (CATALOG[code] ? CATALOG[code].name : (e.name || code));
+    (out[e.account] = out[e.account] || []).push({ code, name:nm, qty, invested: isFinite(inv) ? inv : 0 });
   });
   return out;
 }
@@ -1438,7 +1435,7 @@ function normalizeRetirementPlan(){
 }
 normalizeRetirementPlan();
 
-// Rename an account everywhere: settings list, 원금 입출금, 매수·매도, 배당금, 등록 종목, 은퇴 설계 연결.
+// Rename an account everywhere: settings list, 원금 입출금, 월말 보유, 배당금, 등록 종목, 은퇴 설계 연결.
 function renameAccount(oldName, newName){
   newName = (newName || '').trim();
   if(!newName) return { ok:false, msg:'계좌 이름을 입력해주세요.' };
@@ -1448,7 +1445,7 @@ function renameAccount(oldName, newName){
   if(!acc) return { ok:false, msg:'계좌를 찾을 수 없습니다.' };
   acc.name = newName;
   const swap = arr => arr.forEach(x=>{ if(x && x.account === oldName) x.account = newName; });
-  swap(principalEntries); swap(transactions); swap(userDividends); swap(userStockRegistry);
+  swap(principalEntries); swap(holdingEntries); swap(userDividends); swap(userStockRegistry);
   Object.keys(retirementPlan.groups).forEach(k=>{
     retirementPlan.groups[k] = retirementPlan.groups[k].map(n=> n === oldName ? newName : n);
   });
@@ -1465,7 +1462,7 @@ function renameAccount(oldName, newName){
   const save = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
   save('accountList', accountList);
   save('principalEntries', principalEntries);
-  save('transactions', transactions);
+  save('holdingEntries', holdingEntries);
   save('userDividends', userDividends);
   save('userStockRegistry', userStockRegistry);
   save('retirementPlan', retirementPlan);
@@ -1531,7 +1528,7 @@ function refreshDividendDependents(){
   try{ if(typeof triggerRender === 'function') triggerRender(); }catch(e){ console.error(e); }
   try{ if(typeof renderPrincipalPage === 'function') renderPrincipalPage(); }catch(e){ console.error(e); }
 }
-// 계좌의 특정 날짜 평가금·수익률. 매수·매도/평가금/예수금이 하나도 없는데 원금이 있으면
+// 계좌의 특정 날짜 평가금·수익률. 보유 종목/평가금/예수금이 하나도 없는데 원금이 있으면
 // 평가금 = 원금으로 간주(estimated=true)해서 -100% 같은 왜곡이 생기지 않게 한다.
 // 수익률 = (평가금 + 누적 배당금 − 원금) ÷ 원금  (배당 포함 설정이 켜진 경우)
 function acctValueAt(name, date, accountsMap){
@@ -1683,7 +1680,7 @@ function renderDashboard(requestedIso){
 
   const note = document.getElementById('dateNote');
   const vd = latestValuationDate(snap);
-  note.innerHTML = `<span class="live-dot on"></span>${fmtDot(snap)} 기준` + (vd ? ` · 최근 평가금 입력 ${fmtDot(vd)}` : ' · 평가금 미입력(매수 원가 기준)');
+  note.innerHTML = `<span class="live-dot on"></span>${fmtDot(snap)} 기준` + (vd ? ` · 최근 평가금 입력 ${fmtDot(vd)}` : ' · 평가금 미입력(투자금 기준)');
   document.querySelectorAll('.hero-num, .hero-side').forEach(el=>{
     el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
   });
@@ -1730,7 +1727,7 @@ function renderDashboard(requestedIso){
   acctDonutInst = donut('acctDonut', acctDonutInst, accts.map(a=>a.name), accts.map(a=>a.valuation), accts.map(a=>a.color));
   const assetClasses = computeAssetClasses(currentHoldings);
   assetDonutInst = donut('assetDonut', assetDonutInst, assetClasses.map(a=>a.name), assetClasses.map(a=>a.valuation), assetClasses.map(a=>a.color));
-  if(!assetClasses.length && typeof Chart !== 'undefined') setChartMsg('assetDonut', '보유 종목이 없습니다. 매수·매도 내역을 입력하면 자산군 비중이 표시됩니다.', false);
+  if(!assetClasses.length && typeof Chart !== 'undefined') setChartMsg('assetDonut', '보유 종목이 없습니다. 월말 보유 관리에서 종목을 입력하면 자산군 비중이 표시됩니다.', false);
 
   // ---- account cards ----
   document.getElementById('acctCards').innerHTML = accts.map(a=>{
@@ -1742,7 +1739,7 @@ function renderDashboard(requestedIso){
       <div class="acct-bar"><i style="width:${share}%"></i></div>
       <div class="acct-meta"><span>원금 ${won(a.principal)}</span><span class="ret ${clsFor(a.ret)}">${pct(a.ret)}</span></div>
       ${a.dividends ? `<div class="acct-meta" style="margin-top:4px;"><span>누적 배당 ${won(a.dividends)}${a.counted ? ' (수익률 반영)' : ' (미반영)'}</span></div>` : ''}
-      ${a.estimated ? '<div class="acct-meta" style="margin-top:4px;"><span title="매수·매도 내역이나 월말 평가금이 입력되지 않아 원금을 평가금으로 표시합니다">평가금 미입력 · 원금 기준</span></div>' : ''}
+      ${a.estimated ? '<div class="acct-meta" style="margin-top:4px;"><span title="월말 보유 종목이나 월말 평가금이 입력되지 않아 원금을 평가금으로 표시합니다">평가금 미입력 · 원금 기준</span></div>' : ''}
     </div>`;
   }).join('');
 
@@ -1781,7 +1778,7 @@ function renderHoldingsTable(filter){
     const liveName = (()=>{
       const reg = (userStockRegistry||[]).find(r=> r.account===acct && String(r.code).toUpperCase()===String(code).toUpperCase());
       if(reg) return reg.name;
-      const tx = [...transactions].reverse().find(t=> t.account===acct && t.code===code && t.name && t.name!=='(종목명 미확인)');
+      const tx = [...holdingEntries].reverse().find(t=> t.account===acct && String(t.code).toUpperCase()===String(code).toUpperCase() && t.name && t.name!=='(종목명 미확인)');
       return tx ? tx.name : code;
     })();
     const meta = CATALOG[code] || {name:liveName};
@@ -2039,15 +2036,6 @@ peUploadBtn.addEventListener('click', async ()=>{
 /* ============================================================
    TRANSACTIONS PAGE
    ============================================================ */
-const txQty = document.getElementById('txQty');
-const txPrice = document.getElementById('txPrice');
-const txAmount = document.getElementById('txAmount');
-function updateTxAmount(){
-  const q = parseFloat(txQty.value)||0, p = parseFloat(txPrice.value)||0;
-  txAmount.value = won(q*p);
-}
-txQty.addEventListener('input', updateTxAmount);
-txPrice.addEventListener('input', updateTxAmount);
 document.getElementById('txDate').value = toLocalISO(new Date());
 
 let txLookupTimer = null;
@@ -2071,69 +2059,102 @@ document.getElementById('txCode').addEventListener('input', (e)=>{
   }, 500);
 });
 
+const txNum = v => { const n = parseFloat(String(v === undefined || v === null ? '' : v).replace(/[,\s원]/g,'')); return isNaN(n) ? NaN : n; };
+const txEsc = v => String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function normTxCode(raw){
+  let c = String(raw === undefined || raw === null ? '' : raw).trim().toUpperCase();
+  if(/^\d{1,6}$/.test(c)) c = c.padStart(6,'0');
+  return c;
+}
+// 같은 날짜·계좌·종목은 덮어쓴다
+function upsertHolding(entry){
+  const code = String(entry.code).toUpperCase();
+  holdingEntries = holdingEntries.filter(e=> !(e.date === entry.date && e.account === entry.account && String(e.code).toUpperCase() === code));
+  holdingEntries.push({ ...entry, code });
+}
+function saveHoldingEntries(){
+  localStorage.setItem('holdingEntries', JSON.stringify(holdingEntries));
+  if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
+}
 function renderTxTable(){
-  const sorted = [...transactions].sort((a,b)=> b.date.localeCompare(a.date) || b.id - a.id);
+  const sorted = [...holdingEntries].sort((a,b)=> String(b.date).localeCompare(String(a.date)) || (b.id||0) - (a.id||0));
   const tbody = document.getElementById('txTable');
   const empty = document.getElementById('txEmpty');
-  if(sorted.length === 0){
-    tbody.innerHTML = ''; empty.style.display='block';
-  } else {
-    empty.style.display='none';
-    tbody.innerHTML = sorted.map(t=>`
-      <tr>
-        <td>${fmtDot(t.date)}</td>
-        <td><span class="grp-badge" style="border-color:${ACCT_COLOR[t.account]||'#8a8d99'}55;color:${ACCT_COLOR[t.account]||'#8a8d99'}">${t.account}</span></td>
-        <td class="${t.type==='매수'?'pos':'down'}">${t.type}</td>
-        <td>${t.name} <span class="name-code">${t.code}</span></td>
-        <td>${Number(t.qty).toLocaleString()}</td>
-        <td>${won(t.price)}</td>
-        <td>${won(t.qty*t.price)}</td>
-        <td><button class="btn-danger" data-id="${t.id}">삭제</button></td>
-      </tr>`).join('');
-    tbody.querySelectorAll('.btn-danger').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        transactions = transactions.filter(t=>String(t.id)!==btn.dataset.id);
-        localStorage.setItem('transactions', JSON.stringify(transactions));
-        scheduleAutoPush();
-        renderTxTable(); renderTxSummary();
-        if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
-      });
+  if(sorted.length === 0){ tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = sorted.map(t=>`
+    <tr>
+      <td>${fmtDot(t.date)}</td>
+      <td><span class="grp-badge" style="border-color:${ACCT_COLOR[t.account]||'#8a8d99'}55;color:${ACCT_COLOR[t.account]||'#8a8d99'}">${txEsc(t.account)}</span></td>
+      <td>${txEsc(t.name || t.code)} <span class="name-code">${txEsc(t.code)}</span></td>
+      <td>${Number(t.qty) > 0 ? won(t.qty) : '<span class="down">전량 매도</span>'}</td>
+      <td>${Number(t.qty) > 0 ? won(t.invested) : '–'}</td>
+      <td><button class="btn-danger" data-id="${t.id}">삭제</button></td>
+    </tr>`).join('');
+  tbody.querySelectorAll('.btn-danger').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      holdingEntries = holdingEntries.filter(t=> String(t.id) !== btn.dataset.id);
+      saveHoldingEntries();
+      renderTxTable(); renderTxSummary();
+      if(typeof refreshAfterValuation === 'function') refreshAfterValuation();
     });
-  }
+  });
+}
+function renderTxView(){
+  const sel = document.getElementById('txViewDate');
+  if(!sel) return;
+  const dates = getSnapshotDates().slice().reverse();
+  const today = toLocalISO(new Date());
+  if(!dates.length) dates.push(today);
+  const prev = sel.value;
+  sel.innerHTML = dates.map(d=>`<option value="${d}">${fmtDot(d)}</option>`).join('');
+  sel.value = dates.includes(prev) ? prev : dates[0];
+  const net = computeNetHoldings(sel.value);
+  const rows = [];
+  getAccountNames().forEach(a=>{
+    (net[a] || []).slice().sort((x,y)=> x.name.localeCompare(y.name,'ko')).forEach(h=> rows.push({ a, h }));
+  });
+  const tbody = document.getElementById('txViewTable');
+  const empty = document.getElementById('txViewEmpty');
+  tbody.innerHTML = rows.map(({a,h})=>`
+    <tr>
+      <td><span class="grp-badge" style="border-color:${ACCT_COLOR[a]||'#8a8d99'}55;color:${ACCT_COLOR[a]||'#8a8d99'}">${txEsc(a)}</span></td>
+      <td>${txEsc(h.name)} <span class="name-code">${txEsc(h.code)}</span></td>
+      <td>${won(h.qty)}</td><td>${won(h.invested)}</td><td>${h.qty ? won(h.invested / h.qty) : '–'}</td>
+    </tr>`).join('');
+  empty.style.display = rows.length ? 'none' : 'block';
+  document.getElementById('sumHoldCount').textContent = rows.length + '개';
+  document.getElementById('sumHoldInvested').textContent = won(rows.reduce((s,r)=>s+r.h.invested,0));
 }
 function renderTxSummary(){
-  const buy = transactions.filter(t=>t.type==='매수').reduce((s,t)=>s+t.qty*t.price,0);
-  const sell = transactions.filter(t=>t.type==='매도').reduce((s,t)=>s+t.qty*t.price,0);
-  document.getElementById('sumBuy').textContent = won(buy);
-  document.getElementById('sumSell').textContent = won(sell);
-  const net = document.getElementById('sumNet');
-  net.textContent = (buy-sell>=0?'+':'') + won(buy-sell);
-  net.className = 'value ' + (buy-sell>=0?'pos':'down');
-  document.getElementById('sumCount').textContent = transactions.length;
+  document.getElementById('sumCount').textContent = holdingEntries.length + '건';
+  const last = holdingEntries.reduce((m,e)=> (e.date && e.date > m) ? e.date : m, '');
+  document.getElementById('sumLast').textContent = last ? fmtDot(last) : '–';
+  renderTxView();
   try{ if(typeof window.renderValuationPage === 'function') window.renderValuationPage(); }catch(e){}
 }
+document.getElementById('txViewDate').addEventListener('change', renderTxView);
 renderTxTable(); renderTxSummary();
 
 document.getElementById('addTx').addEventListener('click', ()=>{
   const date = document.getElementById('txDate').value;
   const account = document.getElementById('txAccount').value;
-  const type = document.getElementById('txType').value;
-  const code = document.getElementById('txCode').value.trim();
+  const code = normTxCode(document.getElementById('txCode').value);
   const name = document.getElementById('txName').value.trim();
-  const qty = parseFloat(document.getElementById('txQty').value);
-  const price = parseFloat(document.getElementById('txPrice').value);
-  if(!date || !name || !qty || !price || qty<=0 || price<=0){
-    alert('날짜, 종목명, 수량, 단가를 모두 올바르게 입력해주세요.');
+  const qty = txNum(document.getElementById('txQty').value);
+  const invested = txNum(document.getElementById('txInvested').value);
+  if(!date || !account || !code || !name || !(qty >= 0) || (qty > 0 && !(invested > 0))){
+    alert('날짜, 종목코드, 종목명, 수량(0 이상)을 입력해주세요. 수량이 0보다 크면 투자금 합계도 필요합니다.');
     return;
   }
-  transactions.push({ id: Date.now(), date, account, type, code: code||'-', name, qty, price });
-  localStorage.setItem('transactions', JSON.stringify(transactions));
-  scheduleAutoPush();
+  upsertHolding({ id: Date.now() + Math.random(), date, account, code, name, qty, invested: qty > 0 ? invested : 0 });
+  saveHoldingEntries();
   document.getElementById('txCode').value=''; document.getElementById('txName').value='';
-  document.getElementById('txQty').value=''; document.getElementById('txPrice').value=''; txAmount.value='';
+  document.getElementById('txQty').value=''; document.getElementById('txInvested').value='';
   document.getElementById('txCodeStatus').textContent='';
   renderTxTable(); renderTxSummary();
   if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
+  if(typeof refreshAfterValuation === 'function') refreshAfterValuation();
   const toast = document.getElementById('txToast');
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
 });
@@ -2147,13 +2168,12 @@ txFileInput.addEventListener('change', ()=>{
 });
 
 const TX_HEADER_MAP = {
-  date: ['날짜','일자','거래일자','date'],
+  date: ['날짜','일자','기준일','date'],
   account: ['계좌','account'],
-  type: ['구분','매매구분','type'],
   code: ['종목코드','코드','code'],
   name: ['종목명','종목','name'],
-  qty: ['수량','수량(주)','qty'],
-  price: ['단가','가격','price'],
+  qty: ['수량','수량(주)','보유수량','qty'],
+  invested: ['투자금','투자금액','투자금합계','매수금액','매입금액','invested'],
 };
 function pickField(row, keys){
   for(const k of Object.keys(row)){
@@ -2196,31 +2216,27 @@ txUploadBtn.addEventListener('click', async ()=>{
     }
 
     let addedCount=0, skippedCount=0;
+    const skipNotes = [];
     const parsed = [];
     const toLookup = [];
 
-    rows.forEach(row=>{
+    rows.forEach((row, idx)=>{
       const dateStr = normalizeExcelDate(pickField(row, TX_HEADER_MAP.date));
       let account = String(pickField(row, TX_HEADER_MAP.account)||'').trim();
-      let type = String(pickField(row, TX_HEADER_MAP.type)||'').trim();
-      const code = String(pickField(row, TX_HEADER_MAP.code)||'').trim();
+      const code = normTxCode(pickField(row, TX_HEADER_MAP.code));
       let name = String(pickField(row, TX_HEADER_MAP.name)||'').trim();
-      const qty = parseFloat(pickField(row, TX_HEADER_MAP.qty));
-      const price = parseFloat(pickField(row, TX_HEADER_MAP.price));
+      const qty = txNum(pickField(row, TX_HEADER_MAP.qty));
+      const invested = txNum(pickField(row, TX_HEADER_MAP.invested));
 
-      if(/buy|매수/i.test(type)) type='매수';
-      else if(/sell|매도/i.test(type)) type='매도';
-
-      const knownAcct = getAccountNames().find(a=> account===a || account.includes(a) || a.includes(account));
+      const knownAcct = account && getAccountNames().find(a=> account===a || account.includes(a) || a.includes(account));
       if(knownAcct) account = knownAcct;
 
-      const valid = dateStr && getAccountNames().includes(account) && (type==='매수'||type==='매도')
-        && qty>0 && price>0;
-      if(!valid){ skippedCount++; return; }
+      const valid = dateStr && getAccountNames().includes(account) && code && qty >= 0 && (qty === 0 || invested > 0);
+      if(!valid){ skippedCount++; if(skipNotes.length < 3) skipNotes.push(`${idx+2}행`); return; }
 
-      const entry = { id: Date.now()+addedCount+Math.random(), date:dateStr, account, type, code: code||'-', name, qty, price };
+      const entry = { id: Date.now()+addedCount+Math.random(), date:dateStr, account, code, name, qty, invested: qty > 0 ? invested : 0 };
       parsed.push(entry);
-      if(!name && code) toLookup.push(entry);
+      if(!name) toLookup.push(entry);
       addedCount++;
     });
 
@@ -2235,14 +2251,14 @@ txUploadBtn.addEventListener('click', async ()=>{
     }
 
     if(parsed.length){
-      transactions.push(...parsed);
-      localStorage.setItem('transactions', JSON.stringify(transactions));
-      scheduleAutoPush();
+      parsed.forEach(upsertHolding);
+      saveHoldingEntries();
       renderTxTable(); renderTxSummary();
       if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
+      if(typeof refreshAfterValuation === 'function') refreshAfterValuation();
     }
 
-    status.textContent = `업로드 완료 — 추가 ${addedCount}건` + (lookedUpCount ? ` (종목명 자동조회 ${lookedUpCount}건)` : '') + `, 형식 오류로 제외 ${skippedCount}건`;
+    status.textContent = `업로드 완료 — 추가 ${addedCount}건` + (lookedUpCount ? ` (종목명 자동조회 ${lookedUpCount}건)` : '') + `, 형식 오류로 제외 ${skippedCount}건` + (skipNotes.length ? ` (${skipNotes.join(', ')}…)` : '');
     status.style.color = addedCount ? 'var(--up)' : 'var(--down)';
     txFileInput.value = '';
     txUploadBtn.disabled = true;
@@ -2279,7 +2295,7 @@ const dividendBase = {
 };
 
 // per-account list of stocks to offer in the dividend dropdown: union of any remaining base
-// holdings snapshots (currently empty) + every code the user has logged via 매수·매도 관리
+// holdings snapshots (currently empty) + every code the user has logged via 월말 보유 관리
 // + every code explicitly registered via 종목 관리. Recomputed on demand so it stays live.
 function computeAccountHoldings(){
   const map = {};
@@ -2292,7 +2308,7 @@ function computeAccountHoldings(){
       map[acct].set(code, meta ? meta.name : code);
     });
   });
-  (transactions||[]).forEach(t=>{
+  (holdingEntries||[]).forEach(t=>{
     if(!t.code || t.code === '-') return;
     if(!map[t.account]) map[t.account] = new Map();
     const meta = CATALOG[t.code];
@@ -3154,7 +3170,7 @@ function renderValuationPage(){
     const empty = vEl('valPriceEmpty');
     if(!inputs.length){
       priceBody.innerHTML = '';
-      empty.style.display = 'block'; empty.textContent = '이 날짜까지 보유한 종목이 없습니다. 매수·매도 관리에 종목코드와 함께 거래를 입력해주세요.';
+      empty.style.display = 'block'; empty.textContent = '이 날짜까지 보유한 종목이 없습니다. 월말 보유 관리에 종목코드와 함께 보유 내역를 입력해주세요.';
     } else {
       empty.style.display = 'none';
       priceBody.innerHTML = inputs.map(it=>{
@@ -3575,7 +3591,7 @@ document.getElementById('addCategory').addEventListener('click', ()=>{
 const GOOGLE_CLIENT_ID = '48865465302-osuijlbusfmfit9ju16uuqlo8nb19smf.apps.googleusercontent.com'; // 가계부(my-budget)와 같은 저장소/주소에 올리면 그 앱에서 쓰던 클라이언트 ID를 그대로 재사용할 수 있습니다.
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME = 'asset-dashboard-sync.json';
-const SYNC_KEYS = ['principalEntries','transactions','userDividends','userStockRegistry','retirementPlan','priceSnapshots','cashSnapshots','categoryList','accountList','pageOrder'];
+const SYNC_KEYS = ['principalEntries','holdingEntries','userDividends','userStockRegistry','retirementPlan','priceSnapshots','cashSnapshots','categoryList','accountList','pageOrder'];
 
 let driveAccessToken = null;
 let driveFileId = localStorage.getItem('driveFileId') || null;
