@@ -253,6 +253,106 @@
 .stock-dd-item{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;font-size:13px;cursor:pointer;}
 .stock-dd-item .c{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);}
 .stock-dd-item:hover,.stock-dd-item.on{background:var(--card-hi);}
+
+  /* ---------- 2026-10 개편: 화면 밀도 · 전체 이력 · 대시보드 격자 ---------- */
+  .wrap{ max-width:1480px; padding:0 24px; }
+  .sidebar{ width:216px; padding:20px 12px; }
+  .page-head{ padding:18px 0 12px; }
+  .page-head h2{ margin-top:4px; }
+  .page-head p{ font-size:12.5px; margin-top:4px; max-width:none; }
+  .hero{ padding:18px 0 16px; }
+  .hero-top{ margin-bottom:12px; }
+  section{ padding:14px 0; border-bottom:none; }
+  .sec-head{ margin-bottom:10px; }
+  .sec-title{ font-size:16px; }
+  .card{ padding:14px 16px; border-radius:10px; }
+  .card h3{ margin-bottom:8px; }
+  .form-card{ padding:16px; border-radius:10px; }
+  .chart-box{ height:230px; }
+  .chart-box.tall{ height:270px; }
+  .chart-box.short{ height:170px; }
+  .acct-card{ padding:12px 14px; border-radius:10px; }
+  .acct-val{ font-size:18px; margin-bottom:6px; }
+  .stat-card{ padding:10px 14px; border-radius:10px; }
+  .stat-card .label{ margin-bottom:4px; }
+  .stat-card .value{ font-size:18px; }
+  .summary-strip{ gap:10px; margin-bottom:12px; }
+  .grid-4{ gap:10px; }
+  .grid-2{ gap:12px; }
+  footer{ padding:18px 0; }
+
+  /* 표: 촘촘한 줄 + 고정 머리글 */
+  table{ font-size:12.5px; }
+  thead th{ padding:8px 10px; background:var(--bg-alt); position:sticky; top:0; z-index:2; white-space:nowrap; }
+  tbody td{ padding:6px 10px; font-variant-numeric:tabular-nums; }
+  thead th:first-child, tbody td:first-child, tfoot td:first-child{ padding-left:14px; }
+  thead th:last-child, tbody td:last-child, tfoot td:last-child{ padding-right:14px; }
+  .card.table-scroll{ padding:0; overflow:auto; max-height:64vh; }
+  .card.table-scroll > h3{ padding:12px 14px 0; }
+  .table-title{ padding:10px 14px 8px; font-size:13px; font-weight:600; color:var(--ink-dim); }
+  .btn-danger{ padding:3px 9px; }
+  .grp-badge{ white-space:nowrap; }
+  tfoot td{ text-align:right; padding:8px 10px; font-weight:600; border-top:1px solid var(--line); background:var(--bg-alt); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  tfoot td:first-child{ text-align:left; }
+
+  /* 입력 폼·엑셀 업로드는 접어 두고 필요할 때만 펼친다 */
+  .entry-panel{ border:1px solid var(--line); border-radius:10px; background:var(--card); margin-top:10px; }
+  .entry-panel > summary{ list-style:none; cursor:pointer; padding:9px 14px; font-size:13px; font-weight:600; color:var(--ink-dim); display:flex; align-items:center; gap:8px; user-select:none; }
+  .entry-panel > summary::-webkit-details-marker{ display:none; }
+  .entry-panel > summary::before{ content:'+'; display:inline-flex; width:18px; height:18px; align-items:center; justify-content:center; border-radius:5px; background:var(--gold); color:#1b1508; font-weight:700; font-size:13px; line-height:1; flex-shrink:0; }
+  .entry-panel[open] > summary::before{ content:'−'; }
+  .entry-panel > summary:hover{ color:var(--ink); }
+  .entry-panel > summary .hint{ font-weight:400; font-size:11.5px; color:var(--ink-faint); }
+  .entry-panel > .form-card{ border:none; box-shadow:none; border-top:1px solid var(--line); border-radius:0 0 10px 10px; }
+
+  /* 대시보드 격자 */
+  .dash-grid{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:14px; padding:14px 24px; }
+  .dash-grid > section{ padding:0; min-width:0; }
+  .dg-acct{ grid-column:span 12; order:1; }
+  .dg-trend{ grid-column:span 8; order:2; }
+  .dg-recent{ grid-column:span 4; order:3; }
+  .dg-monthly{ grid-column:span 5; order:4; }
+  .dg-alloc{ grid-column:span 7; order:5; }
+  .dg-asset{ grid-column:span 5; order:6; }
+  .dg-hold{ grid-column:span 7; order:7; }
+  .dash-grid > footer{ grid-column:span 12; order:9; }
+  .dg-alloc .grid-2{ grid-template-columns:1fr 1fr; }
+  .dg-monthly .chart-box.short{ height:263px; }
+  .dg-recent .card.table-scroll{ height:298px; max-height:none; }
+  .dg-asset .card.table-scroll, .dg-hold .card.table-scroll{ max-height:420px; }
+  @media(max-width:1180px){
+    .dash-grid > section{ grid-column:span 12; }
+    .dg-monthly .chart-box.short{ height:170px; }
+  }
+
+  /* 전체 이력 */
+  .hist-toolbar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .hist-toolbar select, .hist-toolbar input{ background:var(--card); border:1px solid var(--line); color:var(--ink); padding:6px 10px; border-radius:8px; font-size:12.5px; color-scheme:light; }
+  .hist-toolbar select:focus, .hist-toolbar input:focus{ outline:none; border-color:var(--gold-dim); }
+  .hist-toolbar input[type=search]{ min-width:200px; flex:1; max-width:320px; }
+  .hist-toolbar .pill{ padding:5px 12px; }
+  .hist-count{ margin-left:auto; font-size:11.5px; color:var(--ink-faint); }
+  #histScroll{ max-height:calc(100vh - 260px); min-height:240px; }
+  .type-badge{ display:inline-block; font-size:11px; font-weight:600; padding:1px 8px; border-radius:20px; white-space:nowrap; }
+  .type-in{ color:var(--up); background:var(--up-bg); }
+  .type-out{ color:var(--down); background:var(--down-bg); }
+  .type-hold{ color:#7a5a1e; background:rgba(184,132,58,.15); }
+  .type-div{ color:#2b7655; background:rgba(63,158,115,.14); }
+  .type-val{ color:#5b4a9c; background:rgba(115,88,184,.13); }
+  .hist-table th:nth-child(3), .hist-table th:nth-child(4),
+  .hist-table td:nth-child(3), .hist-table td:nth-child(4){ text-align:left; }
+  .hist-table td:nth-child(4){ white-space:normal; font-family:var(--sans); }
+  tr.hist-month td, tr.hist-month:hover td{ background:var(--bg-alt); font-size:11.5px; font-weight:600; color:var(--ink-dim); text-align:left; }
+  tr.hist-month td span{ font-weight:400; margin-left:10px; }
+  .hist-go{ font-size:11.5px; padding:2px 8px; border-radius:6px; border:1px solid var(--line); background:transparent; color:var(--ink-dim); cursor:pointer; }
+  .hist-go:hover{ border-color:var(--gold-dim); color:var(--ink); }
+  .link-btn{ background:none; border:none; padding:0; color:var(--gold); font-size:11.5px; cursor:pointer; text-decoration:underline dotted; }
+  .recent-table td:nth-child(3){ text-align:left; white-space:normal; font-family:var(--sans); }
+  .recent-table td{ padding-top:7px; padding-bottom:7px; }
+
+  /* 배당 달력 */
+  .heat-table td{ text-align:right; }
+  .heat-table td.zero{ color:var(--ink-faint); }
 </style>
 </head>
 <body>
@@ -284,6 +384,10 @@
       <div class="nav-item active" data-page="dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13h4v8H3zM10 8h4v13h-4zM17 3h4v18h-4z"/></svg>
         대시보드
+      </div>
+      <div class="nav-item" data-page="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        전체 이력
       </div>
       <div class="nav-item" data-page="principal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
@@ -360,8 +464,8 @@
       </div>
 
       <div id="dashboardContent">
-      <div class="wrap">
-        <section>
+      <div class="wrap dash-grid">
+        <section class="dg-trend">
           <div class="sec-head">
             <div class="sec-title">자산 추이</div>
             <div class="sec-sub" id="trendSub">계좌별 평가금 vs 누적 원금</div>
@@ -371,7 +475,18 @@
           </div>
         </section>
 
-        <section>
+        <section class="dg-recent">
+          <div class="sec-head">
+            <div class="sec-title">최근 이력</div>
+            <button class="link-btn" id="goHistoryBtn" type="button">전체 이력 보기 →</button>
+          </div>
+          <div class="card table-scroll">
+            <table class="recent-table"><tbody id="recentActivity"></tbody></table>
+            <div class="empty-state" id="recentEmpty" style="display:none;">입력된 이력이 없습니다.</div>
+          </div>
+        </section>
+
+        <section class="dg-alloc">
           <div class="sec-head">
             <div class="sec-title">포트폴리오 구성</div>
             <div class="sec-sub" id="allocSub">조회일 · 계좌 · 자산군</div>
@@ -388,7 +503,7 @@
           </div>
         </section>
 
-        <section>
+        <section class="dg-acct">
           <div class="sec-head">
             <div class="sec-title">계좌 요약</div>
             <div class="sec-sub">원금 · 투자금 · 평가금 · 원금대비수익률</div>
@@ -396,7 +511,7 @@
           <div class="grid-4" id="acctCards"></div>
         </section>
 
-        <section>
+        <section class="dg-monthly">
           <div class="sec-head">
             <div class="sec-title">월별 등락</div>
             <div class="sec-sub">전월 대비 평가금 증감율 (%) · 전체 기간</div>
@@ -406,7 +521,7 @@
           </div>
         </section>
 
-        <section>
+        <section class="dg-asset">
           <div class="sec-head">
             <div class="sec-title">자산군별 상세</div>
             <div class="sec-sub" id="assetTableSub">투자금 · 평가금 · 수익률 · 비중</div>
@@ -419,7 +534,7 @@
           </div>
         </section>
 
-        <section>
+        <section class="dg-hold">
           <div class="sec-head">
             <div class="sec-title">보유 종목</div>
             <div class="sec-sub" id="holdingsSub">조회일 전체 보유 내역</div>
@@ -438,6 +553,36 @@
       </div>
     </section>
 
+    <!-- ============ PAGE: HISTORY (전체 이력) ============ -->
+    <section class="page" id="page-history" style="padding:0;border:none;">
+      <div class="page-head">
+        <div class="wrap">
+          <div class="eyebrow">All Activity</div>
+          <h2>전체 이력</h2>
+          <p>입출금 · 월말 보유 변동 · 배당금 · 월말 평가금 입력을 날짜순으로 한 화면에 모았습니다. 수정·삭제는 각 줄의 '편집'을 눌러 해당 메뉴에서 합니다.</p>
+        </div>
+      </div>
+      <div class="wrap">
+        <section>
+          <div class="summary-strip" id="histSummary"></div>
+          <div class="hist-toolbar">
+            <div class="pills" id="histTypeFilter"></div>
+            <select id="histAccount" aria-label="계좌"></select>
+            <select id="histYear" aria-label="연도"></select>
+            <input type="search" id="histSearch" placeholder="종목명 · 메모 · 코드 검색">
+            <span class="hist-count" id="histCount"></span>
+          </div>
+          <div class="card table-scroll" id="histScroll">
+            <table class="hist-table">
+              <thead><tr><th id="histSortDate" style="cursor:pointer;" title="누르면 정렬 순서가 바뀝니다">날짜 ▼</th><th>유형</th><th>계좌</th><th>내용</th><th>수량</th><th>금액</th><th></th></tr></thead>
+              <tbody id="histTable"></tbody>
+            </table>
+            <div class="empty-state" id="histEmpty" style="display:none;">조건에 맞는 이력이 없습니다.</div>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <!-- ============ PAGE: PRINCIPAL ============ -->
     <section class="page" id="page-principal" style="padding:0;border:none;">
       <div class="page-head">
@@ -449,8 +594,9 @@
       </div>
       <div class="wrap">
         <section>
-          <div class="form-card" style="margin-bottom:24px;">
-            <h3 style="margin-bottom:12px;">입출금 내역 추가</h3>
+          <div class="summary-strip" id="principalSummary"></div>
+          <details class="entry-panel" style="margin-top:0;"><summary>입출금 내역 추가</summary>
+          <div class="form-card">
             <div class="form-grid" style="align-items:end;">
               <div class="field"><label>날짜</label><input type="date" id="peDate"></div>
               <div class="field">
@@ -473,12 +619,10 @@
               <span class="toast" id="peToast">추가되었습니다 ✓</span>
             </div>
           </div>
+          </details>
 
-          <div class="form-card" style="margin-bottom:24px;">
-            <div class="sec-head" style="margin-bottom:12px;">
-              <div class="sec-title">엑셀로 일괄 업로드</div>
-              <div class="sec-sub">.xlsx · .xls · .csv 지원</div>
-            </div>
+          <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
+          <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자), <b>계좌</b>, <b>구분</b>(입금/출금), <b>금액</b>, <b>메모</b>(선택). 계좌명은 <span id="peUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
@@ -494,9 +638,10 @@
             </div>
             <div id="peUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
           </div>
+          </details>
 
-          <div class="card table-scroll" style="margin-bottom:24px;">
-            <div style="padding:14px 16px 0;font-size:13px;font-weight:600;color:var(--ink-dim);">입출금 내역 (최신순)</div>
+          <div class="card table-scroll" style="margin:12px 0;">
+            <div class="table-title">입출금 내역 (최신순)</div>
             <table>
               <thead><tr><th>날짜</th><th>계좌</th><th>구분</th><th>금액</th><th>메모</th><th></th></tr></thead>
               <tbody id="principalEntryTable"></tbody>
@@ -504,8 +649,8 @@
             <div class="empty-state" id="principalEntryEmpty" style="display:none;">입력된 입출금 내역이 없습니다.</div>
           </div>
 
-          <div class="summary-strip" id="principalSummary"></div>
-          <div class="card">
+          <div class="card table-scroll">
+            <div class="table-title">월말 계좌별 누적 원금</div>
             <table>
               <thead><tr><th>월말</th><th>계좌</th><th>누적 원금</th><th>누적 배당금</th><th>배당 반영 수익률</th></tr></thead>
               <tbody id="principalTable"></tbody>
@@ -526,7 +671,7 @@
         </div>
       </div>
       <div class="wrap">
-        <section>
+        <details class="entry-panel"><summary>종목 등록</summary>
           <div class="form-card">
             <div class="form-grid" style="grid-template-columns:repeat(4,1fr);align-items:start;">
               <div class="field">
@@ -549,7 +694,7 @@
               <span class="toast" id="regToast">등록되었습니다 ✓</span>
             </div>
           </div>
-        </section>
+        </details>
 
 
         <section>
@@ -583,7 +728,7 @@
         </div>
       </div>
       <div class="wrap">
-        <section>
+        <details class="entry-panel"><summary>월말 보유 변동 입력</summary>
           <div class="form-card">
             <div class="form-grid" style="align-items:start;">
               <div class="field"><label>날짜 (월말)</label><input type="date" id="txDate"></div>
@@ -606,13 +751,9 @@
             </div>
             <div class="date-hint" style="margin-top:10px;">※ 같은 날짜·계좌·종목을 다시 저장하면 덮어씁니다. 저장한 내용은 그 날짜부터 다음 입력 전까지 이어집니다.</div>
           </div>
-        </section>
+        </details>
 
-        <section>
-          <div class="sec-head">
-            <div class="sec-title">엑셀로 일괄 업로드</div>
-            <div class="sec-sub">.xlsx · .xls · .csv 지원</div>
-          </div>
+        <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자·기준일), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(이미 입력해 본 종목이면 종목명만 있어도 코드가 자동으로 채워집니다), <b>수량</b>(0이면 전량 매도), <b>투자금</b>(또는 투자금액·매수금액·매입금액). 계좌명은 <span id="txUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
@@ -629,7 +770,7 @@
             </div>
             <div id="txUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
           </div>
-        </section>
+        </details>
 
         <section>
           <div class="sec-head">
@@ -682,7 +823,7 @@
         </div>
       </div>
       <div class="wrap">
-        <section>
+        <details class="entry-panel"><summary>배당금 등록</summary>
           <div class="form-card">
             <div class="form-grid" style="align-items:start;">
               <div class="field"><label>지급일</label><input type="date" id="divDate"></div>
@@ -704,13 +845,9 @@
               <span class="toast" id="divToast">등록되었습니다 ✓</span>
             </div>
           </div>
-        </section>
+        </details>
 
-        <section>
-          <div class="sec-head">
-            <div class="sec-title">엑셀로 일괄 업로드</div>
-            <div class="sec-sub">.xlsx · .xls · .csv 지원</div>
-          </div>
+        <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>지급일</b>(또는 날짜·일자), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(선택, 비워두면 종목명으로 등록), <b>배당금</b>(또는 금액), <b>메모</b>(선택). 계좌명은 <span id="divUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
@@ -727,10 +864,23 @@
             </div>
             <div id="divUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
           </div>
-        </section>
+        </details>
 
         <section>
           <div class="summary-strip" id="divSummary"></div>
+        </section>
+
+        <section>
+          <div class="sec-head">
+            <div class="sec-title">배당 달력</div>
+            <div class="sec-sub">연도 × 월 · 전체 계좌 합계 · 색이 진할수록 금액이 큼</div>
+          </div>
+          <div class="card table-scroll">
+            <table class="heat-table">
+              <thead><tr id="divHeatHead"></tr></thead>
+              <tbody id="divHeatTable"></tbody>
+            </table>
+          </div>
         </section>
 
         <section>
@@ -861,11 +1011,7 @@
           </div>
         </section>
 
-        <section>
-          <div class="sec-head">
-            <div class="sec-title">엑셀 / CSV로 일괄 업로드</div>
-            <div class="sec-sub">구글 스프레드시트 → 파일 → 다운로드 → .xlsx 또는 .csv</div>
-          </div>
+        <details class="entry-panel"><summary>엑셀 / CSV로 일괄 업로드 <span class="hint">구글 스프레드시트 → 파일 → 다운로드 → .xlsx 또는 .csv</span></summary>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 12px;">
               첫 행은 머리글이어야 합니다. 여러 달을 한 파일에 담아도 됩니다. 인식하는 컬럼:
@@ -881,7 +1027,7 @@
             </div>
             <div id="valUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
           </div>
-        </section>
+        </details>
 
         <section>
           <div class="sec-head">
@@ -1087,13 +1233,15 @@
    (e.g. Chart.js/xlsx not loading from the CDN), so page navigation
    always works even if other features degrade.
    ============================================================ */
-const DEFAULT_PAGE_ORDER = ['dashboard','principal','holdings','transactions','dividends','valuation','retirement','settings'];
-const PAGE_LABELS = { dashboard:'대시보드', principal:'원금 관리', holdings:'종목 관리', transactions:'월말 보유 관리', dividends:'배당금 관리', valuation:'월말 평가금', retirement:'은퇴 설계', settings:'설정' };
+const DEFAULT_PAGE_ORDER = ['dashboard','history','principal','holdings','transactions','dividends','valuation','retirement','settings'];
+const PAGE_LABELS = { dashboard:'대시보드', history:'전체 이력', principal:'원금 관리', holdings:'종목 관리', transactions:'월말 보유 관리', dividends:'배당금 관리', valuation:'월말 평가금', retirement:'은퇴 설계', settings:'설정' };
 let pageOrder = [];
 try{ pageOrder = JSON.parse(localStorage.getItem('pageOrder') || 'null'); }catch(e){ pageOrder = null; }
 if(!Array.isArray(pageOrder)) pageOrder = null;
 if(pageOrder){
   pageOrder = pageOrder.filter(id=>DEFAULT_PAGE_ORDER.includes(id));
+  // 새로 생긴 '전체 이력'은 저장된 순서에 없으면 대시보드 바로 다음에 둔다
+  if(!pageOrder.includes('history')) pageOrder.splice(pageOrder.indexOf('dashboard') + 1, 0, 'history');
   DEFAULT_PAGE_ORDER.forEach(id=>{ if(!pageOrder.includes(id)) pageOrder.push(id); });
 } else {
   pageOrder = [...DEFAULT_PAGE_ORDER];
@@ -1116,6 +1264,7 @@ try{
       item.classList.add('active');
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
       document.getElementById('page-'+item.dataset.page).classList.add('active');
+      if(item.dataset.page === 'history' && typeof renderHistoryPage === 'function') renderHistoryPage();
       if(item.dataset.page === 'dividends' && typeof populateDivStockSelect === 'function'){
         populateDivStockSelect(document.getElementById('divAccount').value);
       }
@@ -1826,6 +1975,7 @@ function renderDashboard(requestedIso){
 
   // keep principal page in sync if visible
   renderPrincipalPage();
+  try{ if(typeof renderRecentActivity === 'function') renderRecentActivity(); }catch(e){ console.error('renderRecentActivity failed:', e); }
 }
 
 function renderHoldingsTable(filter){
@@ -2600,6 +2750,27 @@ function renderDividendsPage(){
   renderDivMonthlyTable(filterYears.includes(preselect) ? preselect : latestYear);
 
   renderDivUserTable();
+  try{ renderDivHeat(); }catch(e){ console.error('renderDivHeat failed:', e); }
+}
+
+// 배당 달력: 연도(행) × 월(열) 전체 계좌 합계, 금액이 클수록 진하게
+function renderDivHeat(){
+  const head = document.getElementById('divHeatHead'), body = document.getElementById('divHeatTable');
+  if(!head || !body) return;
+  head.innerHTML = '<th>연도</th>' + Array.from({length:12},(_,i)=>`<th>${i+1}월</th>`).join('') + '<th>합계</th>';
+  const rows = divYearsList().slice().reverse().map(y=>{
+    const arr = Array(12).fill(0);
+    getAccountNames().forEach(a=> divMonthlyArray(a, y).forEach((v,m)=>{ arr[m] += v; }));
+    return { y, arr, total: arr.reduce((t,n)=>t+n,0) };
+  }).filter((r,i,all)=> r.total > 0 || all.every(x=>!x.total));
+  const max = Math.max(0, ...rows.flatMap(r=>r.arr));
+  body.innerHTML = rows.map(r=>`<tr>
+      <td style="font-weight:600;">${r.y}</td>
+      ${r.arr.map(v=> v > 0
+        ? `<td style="background:rgba(184,132,58,${(0.10 + 0.55 * v / max).toFixed(3)});">${won(v)}</td>`
+        : '<td class="zero">-</td>').join('')}
+      <td style="font-weight:600;">${r.total ? won(r.total) : '-'}</td>
+    </tr>`).join('');
 }
 
 function renderDivMonthlyTable(year){
@@ -3308,6 +3479,157 @@ document.querySelector('.nav-item[data-page="valuation"]').addEventListener('cli
 });
 }catch(err){
   console.error('Month-end valuation setup error:', err);
+}
+
+/* ============================================================
+   전체 이력 (입출금 · 월말 보유 변동 · 배당 · 평가금 입력을 한 표로)
+   읽기 전용: 수정·삭제는 각 메뉴에서 한다. 메뉴를 열 때마다 다시 그린다.
+   ============================================================ */
+// (대시보드가 이 블록보다 먼저 그려지므로 함수 선언으로 둔다)
+function hxEsc(v){ return String(v === undefined || v === null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const HX_TYPES = [ ['all','전체'], ['in','입금'], ['out','출금'], ['hold','보유 변동'], ['div','배당'], ['val','평가금 입력'] ];
+const hxState = { type:'all', account:'all', year:'all', q:'', asc:false };
+
+function hxCollect(){
+  const ev = [];
+  (principalEntries || []).forEach(e=>{
+    if(!e || !e.date) return;
+    const out = e.type === '출금', amt = Number(e.amount) || 0;
+    ev.push({ date:e.date, id:Number(e.id)||0, kind: out ? 'out' : 'in', label: out ? '출금' : '입금', account:e.account||'',
+              desc:e.memo||'', code:'', qty:null, amount: out ? -amt : amt, signed:true, page:'principal' });
+  });
+  (holdingEntries || []).forEach(e=>{
+    if(!e || !e.date) return;
+    const q = Number(e.qty) || 0;
+    ev.push({ date:e.date, id:Number(e.id)||0, kind:'hold', label: q > 0 ? '보유 변동' : '전량 매도', account:e.account||'',
+              desc:e.name || e.code || '', code:e.code||'', qty:q, amount: q > 0 ? (Number(e.invested)||0) : null, signed:false, page:'transactions' });
+  });
+  (userDividends || []).forEach(e=>{
+    if(!e || !e.date) return;
+    ev.push({ date:e.date, id:Number(e.id)||0, kind:'div', label:'배당', account:e.account||'',
+              desc:(e.name || '') + (e.memo ? ' · ' + e.memo : ''), code:(e.code && e.code !== '-') ? e.code : '', qty:null,
+              amount:Number(e.amount)||0, signed:true, page:'dividends' });
+  });
+  Array.from(new Set([...Object.keys(priceSnapshots || {}), ...Object.keys(cashSnapshots || {})])).filter(hasValuationData).forEach(d=>{
+    const nPrice = Object.keys(priceSnapshots[d] || {}).length, nCash = Object.keys(cashSnapshots[d] || {}).length;
+    let total = null;
+    try{ total = Object.values(valuationSnapshot(d).accounts).reduce((t,a)=> t + a.valuation + a.cash, 0); }catch(e){}
+    ev.push({ date:d, id:0, kind:'val', label:'평가금 입력', account:'',
+              desc:[nPrice ? `단가 ${nPrice}종목` : '', nCash ? `예수금 ${nCash}계좌` : ''].filter(Boolean).join(' · ') + ' → 평가금 합계',
+              code:'', qty:null, amount:total, signed:false, page:'valuation' });
+  });
+  return ev;
+}
+function hxAmount(e){
+  if(e.amount === null || e.amount === undefined) return '–';
+  if(!e.signed) return won(e.amount);
+  return `<span class="${e.amount >= 0 ? 'pos' : 'neg'}">${e.amount >= 0 ? '+' : '−'}${won(Math.abs(e.amount))}</span>`;
+}
+function hxAcctBadge(name){
+  if(!name) return '<span style="color:var(--ink-faint);">전체</span>';
+  const c = ACCT_COLOR[name] || '#8a8d99';
+  return `<span class="grp-badge" style="border-color:${c}55;color:${c};margin-right:0;">${hxEsc(name)}</span>`;
+}
+function hxGoPage(page){
+  const item = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if(item) item.click();
+}
+
+function renderHistoryPage(){
+  const body = document.getElementById('histTable');
+  if(!body) return;
+  const all = hxCollect();
+
+  // 필터 선택지 (현재 선택은 유지)
+  const acctSel = document.getElementById('histAccount'), yearSel = document.getElementById('histYear');
+  const names = getAccountNames();
+  if(hxState.account !== 'all' && !names.includes(hxState.account)) hxState.account = 'all';
+  acctSel.innerHTML = '<option value="all">모든 계좌</option>' + names.map(n=>`<option value="${hxEsc(n)}">${hxEsc(n)}</option>`).join('');
+  acctSel.value = hxState.account;
+  const years = Array.from(new Set(all.map(e=>e.date.slice(0,4)))).sort().reverse();
+  if(hxState.year !== 'all' && !years.includes(hxState.year)) hxState.year = 'all';
+  yearSel.innerHTML = '<option value="all">전체 기간</option>' + years.map(y=>`<option value="${y}">${y}년</option>`).join('');
+  yearSel.value = hxState.year;
+
+  const q = hxState.q.trim().toLowerCase();
+  const base = all.filter(e=>
+    (hxState.account === 'all' || e.account === hxState.account) &&
+    (hxState.year === 'all' || e.date.slice(0,4) === hxState.year) &&
+    (!q || (e.desc + ' ' + e.code + ' ' + e.account + ' ' + e.label).toLowerCase().includes(q)));
+  const counts = {}; base.forEach(e=>{ counts[e.kind] = (counts[e.kind]||0) + 1; });
+  document.getElementById('histTypeFilter').innerHTML = HX_TYPES.map(([k,label])=>
+    `<button class="pill ${hxState.type===k?'active':''}" data-hx-type="${k}" type="button">${label} ${k==='all' ? base.length : (counts[k]||0)}</button>`).join('');
+  document.querySelectorAll('[data-hx-type]').forEach(b=> b.addEventListener('click', ()=>{ hxState.type = b.dataset.hxType; renderHistoryPage(); }));
+
+  const rows = base.filter(e=> hxState.type === 'all' || e.kind === hxState.type)
+    .sort((a,b)=> (a.date.localeCompare(b.date) || (a.id - b.id)) * (hxState.asc ? 1 : -1));
+
+  const sum = k => rows.filter(e=>e.kind===k).reduce((t,e)=> t + Math.abs(e.amount||0), 0);
+  const dep = sum('in'), wd = sum('out'), dv = sum('div');
+  document.getElementById('histSummary').innerHTML = `
+    <div class="stat-card"><div class="label">표시 중인 이력</div><div class="value">${rows.length.toLocaleString('ko-KR')}건</div></div>
+    <div class="stat-card"><div class="label">입금 합계</div><div class="value pos">${won(dep)}</div></div>
+    <div class="stat-card"><div class="label">출금 합계</div><div class="value neg">${won(wd)}</div></div>
+    <div class="stat-card"><div class="label">배당 합계</div><div class="value">${won(dv)}</div></div>`;
+  document.getElementById('histSortDate').textContent = '날짜 ' + (hxState.asc ? '▲' : '▼');
+  document.getElementById('histCount').textContent = rows.length
+    ? `${fmtDot(rows[hxState.asc ? 0 : rows.length-1].date)} ~ ${fmtDot(rows[hxState.asc ? rows.length-1 : 0].date)}` : '';
+
+  const empty = document.getElementById('histEmpty');
+  empty.style.display = rows.length ? 'none' : 'block';
+  empty.textContent = all.length ? '조건에 맞는 이력이 없습니다.' : '아직 입력된 이력이 없습니다. 원금 관리 · 월말 보유 관리 · 배당금 관리 · 월말 평가금에서 입력하면 여기에 모입니다.';
+
+  // 월별 묶음 머리줄 (건수 · 순입금 · 배당)
+  const byMonth = {};
+  rows.forEach(e=>{ const m = e.date.slice(0,7); (byMonth[m] = byMonth[m] || []).push(e); });
+  const html = []; let cur = '';
+  rows.forEach(e=>{
+    const m = e.date.slice(0,7);
+    if(m !== cur){
+      cur = m;
+      const g = byMonth[m];
+      const net = g.filter(x=>x.kind==='in'||x.kind==='out').reduce((t,x)=>t+x.amount,0);
+      const d = g.filter(x=>x.kind==='div').reduce((t,x)=>t+x.amount,0);
+      html.push(`<tr class="hist-month"><td colspan="7">${m.replace('-','.')}<span>${g.length}건</span>${net ? `<span>순입금 ${net>0?'+':'−'}${won(Math.abs(net))}</span>` : ''}${d ? `<span>배당 ${won(d)}</span>` : ''}</td></tr>`);
+    }
+    html.push(`<tr>
+      <td>${fmtDot(e.date)}</td>
+      <td><span class="type-badge type-${e.kind}">${e.label}</span></td>
+      <td>${hxAcctBadge(e.account)}</td>
+      <td>${hxEsc(e.desc)}${e.code ? ` <span class="name-code">${hxEsc(e.code)}</span>` : ''}</td>
+      <td>${e.qty === null ? '' : (e.qty > 0 ? won(e.qty) : '0')}</td>
+      <td>${hxAmount(e)}</td>
+      <td><button class="hist-go" data-hx-go="${e.page}" type="button">편집</button></td>
+    </tr>`);
+  });
+  body.innerHTML = html.join('');
+  body.querySelectorAll('[data-hx-go]').forEach(b=> b.addEventListener('click', ()=> hxGoPage(b.dataset.hxGo)));
+}
+
+// 대시보드 '최근 이력' (최신 10건)
+function renderRecentActivity(){
+  const body = document.getElementById('recentActivity'), empty = document.getElementById('recentEmpty');
+  if(!body) return;
+  const rows = hxCollect().sort((a,b)=> b.date.localeCompare(a.date) || (b.id - a.id)).slice(0, 10);
+  empty.style.display = rows.length ? 'none' : 'block';
+  body.innerHTML = rows.map(e=>`<tr>
+      <td style="white-space:nowrap;">${fmtDot(e.date).slice(2)}</td>
+      <td><span class="type-badge type-${e.kind}">${e.label}</span></td>
+      <td>${e.account ? `<span style="color:${ACCT_COLOR[e.account] || '#8a8d99'};">${hxEsc(e.account)}</span>` : ''}${e.account && e.desc ? ' · ' : ''}${hxEsc(e.kind === 'val' ? '평가금 합계' : e.desc)}</td>
+      <td>${hxAmount(e)}</td>
+    </tr>`).join('');
+}
+
+try{
+  document.getElementById('histAccount').addEventListener('change', ev=>{ hxState.account = ev.target.value; renderHistoryPage(); });
+  document.getElementById('histYear').addEventListener('change', ev=>{ hxState.year = ev.target.value; renderHistoryPage(); });
+  document.getElementById('histSearch').addEventListener('input', ev=>{ hxState.q = ev.target.value; renderHistoryPage(); });
+  document.getElementById('histSortDate').addEventListener('click', ()=>{ hxState.asc = !hxState.asc; renderHistoryPage(); });
+  document.getElementById('goHistoryBtn').addEventListener('click', ()=> hxGoPage('history'));
+  renderHistoryPage();
+  renderRecentActivity();
+}catch(err){
+  console.error('History page init error:', err);
 }
 
 /* ============================================================
