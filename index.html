@@ -2398,7 +2398,7 @@ function renderTxSummary(){
   document.getElementById('sumLast').textContent = last ? fmtDot(last) : '–';
   renderTxView();
   try{ if(typeof window.renderValuationPage === 'function') window.renderValuationPage(); }catch(e){}
-  try{ if(typeof renderCatBoard === 'function') renderCatBoard(); }catch(e){ console.error(e); }
+  try{ if(typeof renderRegistryPage === 'function') renderRegistryPage(); /* 보유 계좌가 바뀌면 등록 내역·분류표도 맞춘다 */ }catch(e){ console.error(e); }
 }
 document.getElementById('txViewDate').addEventListener('change', renderTxView);
 renderTxTable(); renderTxSummary();
@@ -2678,7 +2678,33 @@ function renderCatBoard(){
   };
 }
 
+// 자산군은 종목 단위인데 등록 내역은 계좌 단위라서 둘이 어긋날 수 있다(예: 한 계좌에만 등록해 둔 종목을
+// 다른 계좌에서도 보유). 자산군이 정해진 종목은 보유 계좌마다 등록 내역이 있도록 빠진 줄을 채운다.
+function syncRegistryAccounts(){
+  let changed = false;
+  allManagedStocks().forEach(it=>{
+    if(!it.category) return;
+    const accounts = it.accounts.filter(a=>a);
+    accounts.forEach((account, i)=>{
+      if(userStockRegistry.some(s=> s.account === account && normCodeKey(s.code) === it.code)) return;
+      userStockRegistry.push({ id: Date.now() + i + Math.floor(Math.random()*1000)/1000, account, code:it.code, name:it.name, category:it.category, date: toLocalISO(new Date()) });
+      changed = true;
+    });
+    // 계좌 없이('공통') 올려 둔 종목은 실제 보유 계좌가 생기면 계좌별 내역으로 대체
+    if(accounts.length && userStockRegistry.some(s=> !s.account && normCodeKey(s.code) === it.code)){
+      userStockRegistry = userStockRegistry.filter(s=> !(!s.account && normCodeKey(s.code) === it.code));
+      changed = true;
+    }
+  });
+  if(changed){
+    localStorage.setItem('userStockRegistry', JSON.stringify(userStockRegistry));
+    if(typeof scheduleAutoPush === 'function') scheduleAutoPush();
+  }
+  return changed;
+}
+
 function renderRegistryPage(filter){
+  try{ syncRegistryAccounts(); }catch(e){ console.error('syncRegistryAccounts failed:', e); }
   const activePill = document.querySelector('#regFilter .pill.active');
   filter = filter || (activePill ? activePill.dataset.f : '전체');
   const filterNames = ['전체', ...getAccountNames()];
