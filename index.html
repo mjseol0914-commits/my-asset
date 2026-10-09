@@ -292,6 +292,7 @@
   .table-title{ padding:10px 14px 8px; font-size:13px; font-weight:600; color:var(--ink-dim); }
   .btn-danger{ padding:3px 9px; }
   .grp-badge{ white-space:nowrap; }
+  .reg-cat-select{ background:var(--card); border:1px solid var(--line); color:var(--ink); padding:3px 6px; border-radius:6px; font-size:12px; color-scheme:light; }
   tfoot td{ text-align:right; padding:8px 10px; font-weight:600; border-top:1px solid var(--line); background:var(--bg-alt); white-space:nowrap; font-variant-numeric:tabular-nums; }
   tfoot td:first-child{ text-align:left; }
 
@@ -699,6 +700,23 @@
 
         <section>
           <div class="summary-strip" id="regSummary"></div>
+        </section>
+
+        <section id="regUnsetSection" style="display:none;">
+          <div class="sec-head">
+            <div class="sec-title">자산군 미설정 종목</div>
+            <div class="sec-sub" id="regUnsetSub">월말 보유 관리에 입력했지만 자산군이 없는 종목</div>
+          </div>
+          <div class="card table-scroll">
+            <table>
+              <thead><tr><th>종목명</th><th>보유 계좌</th><th>자산군</th><th></th></tr></thead>
+              <tbody id="regUnsetTable"></tbody>
+            </table>
+          </div>
+          <div class="btn-row" style="margin-top:10px;">
+            <button class="btn btn-primary" id="regUnsetApplyAll" type="button">선택한 자산군으로 모두 지정</button>
+            <span class="date-hint" style="margin:0;">자산군을 고른 뒤 지정하면 종목 관리에 등록되고 대시보드 비중에 바로 반영됩니다.</span>
+          </div>
         </section>
 
         <section>
@@ -1830,12 +1848,37 @@ renderTrendCharts();
 /* ============================================================
    DYNAMIC (date-driven) RENDER
    ============================================================ */
+// 종목코드 비교용 정규화: 공백 제거 · 대문자 · 숫자 코드는 6자리로 맞춤 (5930 → 005930, A005930 → 005930)
+function normCodeKey(raw){
+  let c = String(raw === undefined || raw === null ? '' : raw).trim().toUpperCase();
+  if(/^A\d{6}$/.test(c)) c = c.slice(1);
+  if(/^\d{1,6}$/.test(c)) c = c.padStart(6,'0');
+  return c;
+}
+// 월말 보유 관리에 입력된 종목명 (코드 기준, 가장 최근 입력)
+function holdingNameOf(code){
+  const key = normCodeKey(code);
+  let name = '';
+  (holdingEntries || []).forEach(e=>{ if(e && e.name && normCodeKey(e.code) === key) name = e.name; });
+  return name;
+}
+// 종목의 자산군: 종목 관리 등록에서 코드 일치 → 종목명 일치 순으로 찾는다. 없으면 null(미분류).
+function categoryOf(code, name){
+  const key = normCodeKey(code), reg = userStockRegistry || [];
+  let r = reg.find(x=> x && x.category && normCodeKey(x.code) === key);
+  if(!r){
+    const nk = normStockName(name || holdingNameOf(code));
+    if(nk) r = reg.find(x=> x && x.category && normStockName(x.name) === nk);
+  }
+  return r ? r.category : null;
+}
+const UNSET_CATEGORY = '미분류';
 function computeAssetClasses(holdings){
   const map = {};
   holdings.forEach(h=>{
     const [acct,code,qty,avg,inv,cur,val,gain] = h;
-    const cat = ((userStockRegistry||[]).find(r=>String(r.code).toUpperCase()===String(code).toUpperCase())||{}).category || '기타';
-    if(!map[cat]) map[cat] = {name:cat, invested:0, valuation:0, color: getCategoryColor(cat)};
+    const cat = categoryOf(code) || UNSET_CATEGORY;
+    if(!map[cat]) map[cat] = {name:cat, invested:0, valuation:0, color: cat === UNSET_CATEGORY ? '#c9cbd1' : getCategoryColor(cat)};
     map[cat].invested += inv; map[cat].valuation += val;
   });
   const totalVal = Object.values(map).reduce((s,a)=>s+a.valuation,0) || 1;
@@ -1954,11 +1997,15 @@ function renderDashboard(requestedIso){
     const gain = a.valuation - a.invested;
     return `<tr>
       <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${a.color};margin-right:8px;"></span>${a.name}</td>
-      <td></td><td>${won(a.invested)}</td><td>${won(a.valuation)}</td>
+      <td>${a.name === UNSET_CATEGORY ? '<button class="hist-go" data-go-reg type="button">자산군 지정</button>' : ''}</td><td>${won(a.invested)}</td><td>${won(a.valuation)}</td>
       <td class="${clsFor(gain)}">${gain>=0?'+':''}${won(gain)}</td>
       <td class="${clsFor(a.ret)}">${pct(a.ret)}</td><td>${a.weight.toFixed(1)}%</td>
     </tr>`;
   }).join('');
+
+  document.querySelectorAll('#assetTable [data-go-reg]').forEach(b=> b.addEventListener('click', ()=>{
+    document.querySelector('.nav-item[data-page="holdings"]').click();
+  }));
 
   // ---- holdings filter pills ----
   const filterNames = ['전체', ...getAccountNames()];
@@ -2320,6 +2367,7 @@ function renderTxSummary(){
   document.getElementById('sumLast').textContent = last ? fmtDot(last) : '–';
   renderTxView();
   try{ if(typeof window.renderValuationPage === 'function') window.renderValuationPage(); }catch(e){}
+  try{ if(typeof renderRegUnset === 'function') renderRegUnset(); }catch(e){ console.error(e); }
 }
 document.getElementById('txViewDate').addEventListener('change', renderTxView);
 renderTxTable(); renderTxSummary();
@@ -2487,6 +2535,74 @@ function populateRegCategorySelect(){
 }
 populateRegCategorySelect();
 
+function saveRegistry(){
+  localStorage.setItem('userStockRegistry', JSON.stringify(userStockRegistry));
+  scheduleAutoPush();
+}
+// 종목 관리가 바뀌면 자산군 비중을 쓰는 대시보드도 바로 다시 그린다
+function afterRegistryChanged(){
+  try{ if(typeof triggerRender === 'function') triggerRender(); }catch(e){ console.error(e); }
+}
+function regCategoryOptions(current){
+  const names = categoryList.map(c=>c.name);
+  if(current && !names.includes(current)) names.push(current); // 설정에서 삭제된 자산군도 현재 값은 보여준다
+  return names.map(n=>`<option value="${n}" ${n===current?'selected':''}>${n}</option>`).join('');
+}
+// 월말 보유 관리에 입력된 적이 있지만 자산군이 정해지지 않은 종목 목록
+function unsetCategoryStocks(){
+  const map = new Map();
+  (holdingEntries || []).forEach(e=>{
+    if(!e || !e.code || !(Number(e.qty) > 0)) return;
+    const key = normCodeKey(e.code);
+    if(!map.has(key)) map.set(key, { code:key, name:e.name || key, accounts:new Set() });
+    const it = map.get(key);
+    if(e.name) it.name = e.name;
+    if(e.account) it.accounts.add(e.account);
+  });
+  return Array.from(map.values()).filter(it=> !categoryOf(it.code, it.name)).sort((a,b)=> a.name.localeCompare(b.name,'ko'));
+}
+// 미설정 종목에 자산군 지정: 보유 계좌마다 종목 관리에 등록(이미 등록돼 있으면 자산군만 채움)
+function assignCategory(item, category){
+  const order = getAccountNames();
+  Array.from(item.accounts).sort((a,b)=> order.indexOf(a) - order.indexOf(b)).forEach((account, i)=>{
+    const exist = userStockRegistry.find(s=> s.account === account && normCodeKey(s.code) === item.code);
+    if(exist){ exist.category = category; return; }
+    userStockRegistry.push({ id: Date.now() + i + Math.floor(Math.random()*1000)/1000, account, code:item.code, name:item.name, category, date: toLocalISO(new Date()) });
+  });
+}
+function renderRegUnset(){
+  const sec = document.getElementById('regUnsetSection'), body = document.getElementById('regUnsetTable');
+  if(!sec || !body) return;
+  const items = unsetCategoryStocks();
+  sec.style.display = items.length ? '' : 'none';
+  if(!items.length){ body.innerHTML = ''; return; }
+  document.getElementById('regUnsetSub').textContent = `${items.length}개 종목 · 월말 보유 관리에 입력했지만 자산군이 없는 종목`;
+  const opts = '<option value="">자산군 선택</option>' + categoryList.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  body.innerHTML = items.map((it,i)=>`
+    <tr>
+      <td>${it.name} <span class="name-code">${it.code}</span></td>
+      <td style="white-space:normal;">${Array.from(it.accounts).map(a=>`<span class="grp-badge" style="border-color:${ACCT_COLOR[a]||'#8a8d99'}55;color:${ACCT_COLOR[a]||'#8a8d99'}">${a}</span>`).join('')}</td>
+      <td><select class="reg-cat-select" data-unset="${i}">${opts}</select></td>
+      <td><button class="hist-go" data-unset-apply="${i}" type="button">지정</button></td>
+    </tr>`).join('');
+  const done = ()=>{
+    saveRegistry(); refreshKnownStockList();
+    renderRegistryPage();
+    afterRegistryChanged();
+  };
+  body.querySelectorAll('[data-unset-apply]').forEach(btn=> btn.addEventListener('click', ()=>{
+    const i = btn.dataset.unsetApply, cat = body.querySelector(`select[data-unset="${i}"]`).value;
+    if(!cat){ alert('자산군을 먼저 선택해주세요.'); return; }
+    assignCategory(items[i], cat); done();
+  }));
+  document.getElementById('regUnsetApplyAll').onclick = ()=>{
+    let n = 0;
+    body.querySelectorAll('select[data-unset]').forEach(sel=>{ if(sel.value){ assignCategory(items[sel.dataset.unset], sel.value); n++; } });
+    if(!n){ alert('자산군을 선택한 종목이 없습니다. 각 종목의 자산군을 먼저 골라주세요.'); return; }
+    done();
+  };
+}
+
 function renderRegistryPage(filter){
   const activePill = document.querySelector('#regFilter .pill.active');
   filter = filter || (activePill ? activePill.dataset.f : '전체');
@@ -2510,7 +2626,7 @@ function renderRegistryPage(filter){
       <tr>
         <td><span class="grp-badge" style="border-color:${ACCT_COLOR[s.account]||'#8a8d99'}55;color:${ACCT_COLOR[s.account]||'#8a8d99'}">${s.account}</span></td>
         <td>${s.name} <span class="name-code">${s.code}</span></td>
-        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getCategoryColor(s.category)};margin-right:6px;"></span>${s.category}</td>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getCategoryColor(s.category)};margin-right:6px;"></span><select class="reg-cat-select" data-cat-id="${s.id}">${regCategoryOptions(s.category)}</select></td>
         <td>${fmtDot(s.date)}</td>
         <td><button class="btn-danger" data-id="${s.id}">삭제</button></td>
       </tr>`).join('');
@@ -2521,9 +2637,23 @@ function renderRegistryPage(filter){
         scheduleAutoPush();
         renderRegistryPage(filter);
         if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
+        afterRegistryChanged();
+      });
+    });
+    // 자산군 변경: 자산군은 종목(코드) 단위로 판정하므로 같은 종목의 다른 계좌 등록분도 함께 바꾼다
+    tbody.querySelectorAll('.reg-cat-select').forEach(sel=>{
+      sel.addEventListener('change', ()=>{
+        const target = userStockRegistry.find(s=> String(s.id) === sel.dataset.catId);
+        if(!target) return;
+        const key = normCodeKey(target.code);
+        userStockRegistry.forEach(s=>{ if(normCodeKey(s.code) === key) s.category = sel.value; });
+        saveRegistry();
+        renderRegistryPage(filter);
+        afterRegistryChanged();
       });
     });
   }
+  renderRegUnset();
 
   document.getElementById('regSummary').innerHTML = getAccountNames().map(a=>{
     const count = userStockRegistry.filter(s=>s.account===a).length;
@@ -2585,12 +2715,13 @@ document.getElementById('addReg').addEventListener('click', ()=>{
   const name = document.getElementById('regName').value.trim();
   let code = document.getElementById('regCode').value.trim();
   if(!code && name){ const f = findStockByName(name); if(f) code = f.code; }
+  code = normCodeKey(code);
   const category = document.getElementById('regCategory').value;
   if(!code || !name){
     alert('종목명과 종목코드를 입력해주세요. (이미 입력해 본 종목은 종목명만 입력해도 코드가 채워집니다)');
     return;
   }
-  const dup = userStockRegistry.find(s=> s.account===account && s.code.toUpperCase()===code.toUpperCase());
+  const dup = userStockRegistry.find(s=> s.account===account && normCodeKey(s.code)===code);
   if(dup){
     alert('이미 이 계좌에 등록된 종목코드입니다.');
     return;
@@ -2601,6 +2732,7 @@ document.getElementById('addReg').addEventListener('click', ()=>{
   document.getElementById('regCode').value=''; document.getElementById('regCode').dataset.auto=''; document.getElementById('regName').value='';
   document.getElementById('regCodeStatus').textContent=''; refreshKnownStockList();
   renderRegistryPage();
+  afterRegistryChanged();
   if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
   const toast = document.getElementById('regToast');
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
