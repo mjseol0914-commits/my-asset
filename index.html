@@ -292,6 +292,8 @@
   .table-title{ padding:10px 14px 8px; font-size:13px; font-weight:600; color:var(--ink-dim); }
   .btn-danger{ padding:3px 9px; }
   .grp-badge{ white-space:nowrap; }
+  .cat-board th:nth-child(3), .cat-board td:nth-child(3), .cat-board th:nth-child(4), .cat-board td:nth-child(4){ text-align:left; }
+  .cat-board td:nth-child(2){ white-space:nowrap; }
   .reg-cat-select{ background:var(--card); border:1px solid var(--line); color:var(--ink); padding:3px 6px; border-radius:6px; font-size:12px; color-scheme:light; }
   tfoot td{ text-align:right; padding:8px 10px; font-weight:600; border-top:1px solid var(--line); background:var(--bg-alt); white-space:nowrap; font-variant-numeric:tabular-nums; }
   tfoot td:first-child{ text-align:left; }
@@ -696,33 +698,62 @@
             </div>
           </div>
         </details>
+        <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
+          <div class="form-card">
+            <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
+              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>종목명</b>, <b>종목코드</b>(이미 입력해 본 종목이면 종목명만 있어도 됩니다), <b>자산군</b>, <b>계좌</b>(선택).
+              계좌를 비워 두면 그 종목을 보유한 모든 계좌에 한꺼번에 적용되고, 어느 계좌에도 없는 종목은 '공통'으로 등록됩니다.
+              이미 등록된 종목은 자산군만 바뀝니다. 자산군은 <span id="regUploadCategoryHint">설정에 등록된 자산군</span> 중 하나여야 합니다.
+              '양식 내려받기'를 누르면 지금 관리 중인 종목이 모두 채워진 파일이 내려오니, 자산군 칸만 채워 다시 올리면 됩니다.
+            </p>
+            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
+              <div class="field" style="min-width:220px;">
+                <label>파일 선택</label>
+                <input type="file" id="regFileInput" accept=".xlsx,.xls,.csv">
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" id="regUploadBtn" type="button" disabled>업로드 실행</button>
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-ghost" id="regTemplateBtn" type="button">양식 내려받기 (CSV)</button>
+              </div>
+            </div>
+            <div id="regUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
+          </div>
+        </details>
 
 
         <section>
           <div class="summary-strip" id="regSummary"></div>
         </section>
 
-        <section id="regUnsetSection" style="display:none;">
+        <section id="catBoardSection">
           <div class="sec-head">
-            <div class="sec-title">자산군 미설정 종목</div>
-            <div class="sec-sub" id="regUnsetSub">월말 보유 관리에 입력했지만 자산군이 없는 종목</div>
+            <div class="sec-title">종목별 자산군 분류</div>
+            <div class="sec-sub" id="catBoardSub">계좌와 관계없이 종목당 한 번만 지정</div>
+          </div>
+          <div class="hist-toolbar">
+            <div class="pills" id="catBoardFilter"></div>
+            <span style="margin-left:auto;font-size:12.5px;color:var(--ink-dim);" id="catBoardSelCount">선택 0개</span>
+            <select id="catBoardBulkCat" aria-label="일괄 지정할 자산군"></select>
+            <button class="btn btn-primary" id="catBoardBulkApply" type="button" style="padding:7px 14px;font-size:12.5px;">선택한 종목 일괄 지정</button>
           </div>
           <div class="card table-scroll">
-            <table>
-              <thead><tr><th>종목명</th><th>보유 계좌</th><th>자산군</th><th></th></tr></thead>
-              <tbody id="regUnsetTable"></tbody>
+            <table class="cat-board">
+              <thead><tr><th style="width:34px;"><input type="checkbox" id="catBoardAll" aria-label="모두 선택"></th><th>종목명</th><th>계좌</th><th>자산군</th></tr></thead>
+              <tbody id="catBoardTable"></tbody>
             </table>
+            <div class="empty-state" id="catBoardEmpty" style="display:none;"></div>
           </div>
-          <div class="btn-row" style="margin-top:10px;">
-            <button class="btn btn-primary" id="regUnsetApplyAll" type="button">선택한 자산군으로 모두 지정</button>
-            <span class="date-hint" style="margin:0;">자산군을 고른 뒤 지정하면 종목 관리에 등록되고 대시보드 비중에 바로 반영됩니다.</span>
-          </div>
+          <div class="date-hint" style="margin-top:8px;">※ 자산군은 종목 단위로 적용됩니다. 한 번 지정하면 그 종목을 가진 모든 계좌에 함께 반영되고, 대시보드 비중도 바로 바뀝니다.</div>
         </section>
 
         <section>
           <div class="sec-head">
-            <div class="sec-title">등록된 종목</div>
-            <div class="sec-sub">계좌별 필터</div>
+            <div class="sec-title">계좌별 등록 내역</div>
+            <div class="sec-sub">계좌별 필터 · 자산군 변경은 위 표에서</div>
           </div>
           <div class="pills" id="regFilter" style="margin-bottom:16px;"></div>
           <div class="card table-scroll">
@@ -2367,7 +2398,7 @@ function renderTxSummary(){
   document.getElementById('sumLast').textContent = last ? fmtDot(last) : '–';
   renderTxView();
   try{ if(typeof window.renderValuationPage === 'function') window.renderValuationPage(); }catch(e){}
-  try{ if(typeof renderRegUnset === 'function') renderRegUnset(); }catch(e){ console.error(e); }
+  try{ if(typeof renderCatBoard === 'function') renderCatBoard(); }catch(e){ console.error(e); }
 }
 document.getElementById('txViewDate').addEventListener('change', renderTxView);
 renderTxTable(); renderTxSummary();
@@ -2548,57 +2579,101 @@ function regCategoryOptions(current){
   if(current && !names.includes(current)) names.push(current); // 설정에서 삭제된 자산군도 현재 값은 보여준다
   return names.map(n=>`<option value="${n}" ${n===current?'selected':''}>${n}</option>`).join('');
 }
-// 월말 보유 관리에 입력된 적이 있지만 자산군이 정해지지 않은 종목 목록
-function unsetCategoryStocks(){
+// 계좌와 관계없이 종목(코드)당 한 줄: 월말 보유 관리에 입력한 종목 + 종목 관리에 등록한 종목
+function allManagedStocks(){
   const map = new Map();
-  (holdingEntries || []).forEach(e=>{
-    if(!e || !e.code || !(Number(e.qty) > 0)) return;
-    const key = normCodeKey(e.code);
-    if(!map.has(key)) map.set(key, { code:key, name:e.name || key, accounts:new Set() });
+  const touch = (code, name, account)=>{
+    const key = normCodeKey(code);
+    if(!key) return null;
+    if(!map.has(key)) map.set(key, { code:key, name:'', accounts:new Set() });
     const it = map.get(key);
-    if(e.name) it.name = e.name;
-    if(e.account) it.accounts.add(e.account);
-  });
-  return Array.from(map.values()).filter(it=> !categoryOf(it.code, it.name)).sort((a,b)=> a.name.localeCompare(b.name,'ko'));
-}
-// 미설정 종목에 자산군 지정: 보유 계좌마다 종목 관리에 등록(이미 등록돼 있으면 자산군만 채움)
-function assignCategory(item, category){
+    if(name) it.name = name;
+    if(account) it.accounts.add(account);
+    return it;
+  };
+  (holdingEntries || []).forEach(e=>{ if(e && e.code && Number(e.qty) > 0) touch(e.code, e.name, e.account); });
+  (userStockRegistry || []).forEach(r=>{ if(r && r.code) touch(r.code, r.name, r.account); }); // 직접 등록한 이름 우선
   const order = getAccountNames();
-  Array.from(item.accounts).sort((a,b)=> order.indexOf(a) - order.indexOf(b)).forEach((account, i)=>{
-    const exist = userStockRegistry.find(s=> s.account === account && normCodeKey(s.code) === item.code);
-    if(exist){ exist.category = category; return; }
+  return Array.from(map.values()).map(it=>({
+    code: it.code, name: it.name || it.code,
+    accounts: Array.from(it.accounts).sort((a,b)=> order.indexOf(a) - order.indexOf(b)),
+    category: categoryOf(it.code, it.name),
+  })).sort((a,b)=> (!!a.category - !!b.category) || a.name.localeCompare(b.name,'ko'));
+}
+// 종목에 자산군 지정: 그 종목이 있는 모든 계좌에 등록(이미 등록돼 있으면 자산군만 바꿈)
+function assignCategory(item, category){
+  userStockRegistry.forEach(s=>{ if(normCodeKey(s.code) === item.code) s.category = category; });
+  item.accounts.forEach((account, i)=>{
+    if(userStockRegistry.some(s=> s.account === account && normCodeKey(s.code) === item.code)) return;
     userStockRegistry.push({ id: Date.now() + i + Math.floor(Math.random()*1000)/1000, account, code:item.code, name:item.name, category, date: toLocalISO(new Date()) });
   });
 }
-function renderRegUnset(){
-  const sec = document.getElementById('regUnsetSection'), body = document.getElementById('regUnsetTable');
-  if(!sec || !body) return;
-  const items = unsetCategoryStocks();
-  sec.style.display = items.length ? '' : 'none';
-  if(!items.length){ body.innerHTML = ''; return; }
-  document.getElementById('regUnsetSub').textContent = `${items.length}개 종목 · 월말 보유 관리에 입력했지만 자산군이 없는 종목`;
-  const opts = '<option value="">자산군 선택</option>' + categoryList.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+// 표의 상태. 이 함수는 위쪽(월말 보유 요약)에서 먼저 불릴 수 있어 함수에 붙여 둔다.
+//   filter: 'unset' | 'all' (처음엔 미분류가 있으면 미분류부터), selected: 체크한 종목코드
+function renderCatBoard(){
+  const body = document.getElementById('catBoardTable');
+  if(!body) return;
+  const st = renderCatBoard.state || (renderCatBoard.state = { filter:null, selected:new Set() });
+  const all = allManagedStocks();
+  const unsetCount = all.filter(it=>!it.category).length;
+  if(st.filter === null) st.filter = unsetCount ? 'unset' : 'all';
+  const items = all.filter(it=> st.filter === 'all' || !it.category);
+  Array.from(st.selected).forEach(c=>{ if(!items.some(it=>it.code===c)) st.selected.delete(c); });
+
+  document.getElementById('catBoardSub').textContent = `전체 ${all.length}개 종목 · 미분류 ${unsetCount}개 · 계좌와 관계없이 종목당 한 번만 지정`;
+  document.getElementById('catBoardFilter').innerHTML =
+    `<button class="pill ${st.filter==='unset'?'active':''}" data-cb-filter="unset" type="button">미분류 ${unsetCount}</button>` +
+    `<button class="pill ${st.filter==='all'?'active':''}" data-cb-filter="all" type="button">전체 ${all.length}</button>`;
+  document.querySelectorAll('[data-cb-filter]').forEach(b=> b.addEventListener('click', ()=>{ st.filter = b.dataset.cbFilter; renderCatBoard(); }));
+
+  const bulk = document.getElementById('catBoardBulkCat'), prevBulk = bulk.value;
+  bulk.innerHTML = '<option value="">자산군 선택</option>' + categoryList.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  if(categoryList.some(c=>c.name===prevBulk)) bulk.value = prevBulk;
+
+  const empty = document.getElementById('catBoardEmpty');
+  empty.style.display = items.length ? 'none' : 'block';
+  empty.textContent = all.length ? '미분류 종목이 없습니다. 모든 종목에 자산군이 지정되어 있습니다.' : '아직 종목이 없습니다. 월말 보유 관리에 종목을 입력하거나 위에서 종목을 등록하면 여기에 나타납니다.';
+
   body.innerHTML = items.map((it,i)=>`
     <tr>
+      <td><input type="checkbox" data-cb-check="${i}" ${st.selected.has(it.code)?'checked':''} aria-label="${it.name} 선택"></td>
       <td>${it.name} <span class="name-code">${it.code}</span></td>
-      <td style="white-space:normal;">${Array.from(it.accounts).map(a=>`<span class="grp-badge" style="border-color:${ACCT_COLOR[a]||'#8a8d99'}55;color:${ACCT_COLOR[a]||'#8a8d99'}">${a}</span>`).join('')}</td>
-      <td><select class="reg-cat-select" data-unset="${i}">${opts}</select></td>
-      <td><button class="hist-go" data-unset-apply="${i}" type="button">지정</button></td>
+      <td style="white-space:normal;">${it.accounts.map(a=>`<span class="grp-badge" style="border-color:${ACCT_COLOR[a]||'#8a8d99'}55;color:${ACCT_COLOR[a]||'#8a8d99'}">${a}</span>`).join('')}</td>
+      <td>${it.category ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getCategoryColor(it.category)};margin-right:6px;"></span>` : ''}<select class="reg-cat-select" data-cb-cat="${i}">${it.category ? '' : '<option value="">미분류</option>'}${regCategoryOptions(it.category)}</select></td>
     </tr>`).join('');
+
+  const syncSel = ()=>{
+    document.getElementById('catBoardSelCount').textContent = `선택 ${st.selected.size}개`;
+    const allBox = document.getElementById('catBoardAll');
+    allBox.checked = items.length > 0 && items.every(it=>st.selected.has(it.code));
+    allBox.indeterminate = !allBox.checked && st.selected.size > 0;
+  };
+  syncSel();
   const done = ()=>{
     saveRegistry(); refreshKnownStockList();
-    renderRegistryPage();
-    afterRegistryChanged();
+    renderRegistryPage();   // 계좌별 등록 내역 + 이 표를 함께 다시 그림
+    afterRegistryChanged(); // 대시보드 비중 갱신
   };
-  body.querySelectorAll('[data-unset-apply]').forEach(btn=> btn.addEventListener('click', ()=>{
-    const i = btn.dataset.unsetApply, cat = body.querySelector(`select[data-unset="${i}"]`).value;
-    if(!cat){ alert('자산군을 먼저 선택해주세요.'); return; }
-    assignCategory(items[i], cat); done();
+  body.querySelectorAll('[data-cb-check]').forEach(box=> box.addEventListener('change', ()=>{
+    const code = items[box.dataset.cbCheck].code;
+    if(box.checked) st.selected.add(code); else st.selected.delete(code);
+    syncSel();
   }));
-  document.getElementById('regUnsetApplyAll').onclick = ()=>{
-    let n = 0;
-    body.querySelectorAll('select[data-unset]').forEach(sel=>{ if(sel.value){ assignCategory(items[sel.dataset.unset], sel.value); n++; } });
-    if(!n){ alert('자산군을 선택한 종목이 없습니다. 각 종목의 자산군을 먼저 골라주세요.'); return; }
+  body.querySelectorAll('[data-cb-cat]').forEach(sel=> sel.addEventListener('change', ()=>{
+    if(!sel.value) return;
+    assignCategory(items[sel.dataset.cbCat], sel.value); done();
+  }));
+  document.getElementById('catBoardAll').onchange = ev=>{
+    items.forEach(it=>{ if(ev.target.checked) st.selected.add(it.code); else st.selected.delete(it.code); });
+    renderCatBoard();
+  };
+  document.getElementById('catBoardBulkApply').onclick = ()=>{
+    const cat = document.getElementById('catBoardBulkCat').value;
+    const picked = items.filter(it=>st.selected.has(it.code));
+    if(!picked.length){ alert('먼저 표에서 종목을 체크해주세요.'); return; }
+    if(!cat){ alert('일괄 지정할 자산군을 선택해주세요.'); return; }
+    picked.forEach(it=> assignCategory(it, cat));
+    st.selected.clear();
     done();
   };
 }
@@ -2624,9 +2699,9 @@ function renderRegistryPage(filter){
     empty.style.display='none';
     tbody.innerHTML = rows.map(s=>`
       <tr>
-        <td><span class="grp-badge" style="border-color:${ACCT_COLOR[s.account]||'#8a8d99'}55;color:${ACCT_COLOR[s.account]||'#8a8d99'}">${s.account}</span></td>
+        <td><span class="grp-badge" style="border-color:${ACCT_COLOR[s.account]||'#8a8d99'}55;color:${ACCT_COLOR[s.account]||'#8a8d99'}">${s.account || '공통'}</span></td>
         <td>${s.name} <span class="name-code">${s.code}</span></td>
-        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getCategoryColor(s.category)};margin-right:6px;"></span><select class="reg-cat-select" data-cat-id="${s.id}">${regCategoryOptions(s.category)}</select></td>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getCategoryColor(s.category)};margin-right:6px;"></span>${s.category}</td>
         <td>${fmtDot(s.date)}</td>
         <td><button class="btn-danger" data-id="${s.id}">삭제</button></td>
       </tr>`).join('');
@@ -2640,20 +2715,8 @@ function renderRegistryPage(filter){
         afterRegistryChanged();
       });
     });
-    // 자산군 변경: 자산군은 종목(코드) 단위로 판정하므로 같은 종목의 다른 계좌 등록분도 함께 바꾼다
-    tbody.querySelectorAll('.reg-cat-select').forEach(sel=>{
-      sel.addEventListener('change', ()=>{
-        const target = userStockRegistry.find(s=> String(s.id) === sel.dataset.catId);
-        if(!target) return;
-        const key = normCodeKey(target.code);
-        userStockRegistry.forEach(s=>{ if(normCodeKey(s.code) === key) s.category = sel.value; });
-        saveRegistry();
-        renderRegistryPage(filter);
-        afterRegistryChanged();
-      });
-    });
   }
-  renderRegUnset();
+  renderCatBoard();
 
   document.getElementById('regSummary').innerHTML = getAccountNames().map(a=>{
     const count = userStockRegistry.filter(s=>s.account===a).length;
@@ -2736,6 +2799,105 @@ document.getElementById('addReg').addEventListener('click', ()=>{
   if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
   const toast = document.getElementById('regToast');
   toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 2200);
+});
+
+/* ---- 종목 관리: Excel/CSV bulk upload (종목명 · 종목코드 · 자산군 · 계좌(선택)) ---- */
+const regFileInput = document.getElementById('regFileInput');
+const regUploadBtn = document.getElementById('regUploadBtn');
+regFileInput.addEventListener('change', ()=>{
+  regUploadBtn.disabled = !regFileInput.files.length;
+  document.getElementById('regUploadStatus').textContent = '';
+});
+function refreshRegUploadHint(){
+  const el = document.getElementById('regUploadCategoryHint');
+  if(el) el.textContent = categoryList.map(c=>c.name).join('·');
+}
+refreshRegUploadHint();
+document.getElementById('regFileInput').closest('details').addEventListener('toggle', refreshRegUploadHint);
+
+const REG_HEADER_MAP = {
+  name: ['종목명','종목','name'],
+  code: ['종목코드','코드','code'],
+  category: ['자산군','분류','카테고리','category'],
+  account: ['계좌','account'],
+};
+// 양식: 지금 관리 중인 종목(월말 보유 + 등록분)을 종목당 한 줄로 채워서 내려준다
+document.getElementById('regTemplateBtn').addEventListener('click', ()=>{
+  const q = v => /[",\r\n]/.test(String(v)) ? '"' + String(v).replace(/"/g,'""') + '"' : String(v);
+  const stocks = allManagedStocks().sort((a,b)=> a.name.localeCompare(b.name,'ko'));
+  const lines = ['종목명,종목코드,자산군,계좌'];
+  if(stocks.length) stocks.forEach(it=> lines.push([q(it.name), q(it.code), q(it.category || ''), ''].join(',')));
+  else lines.push(`TIGER 미국S&P500,360750,${categoryList[0] ? categoryList[0].name : ''},`, `삼성전자,005930,${categoryList[1] ? categoryList[1].name : ''},`);
+  try{
+    const url = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = '종목관리_양식.csv';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }catch(e){ console.error('template download failed:', e); alert('양식 다운로드에 실패했습니다.'); }
+});
+
+regUploadBtn.addEventListener('click', async ()=>{
+  const status = document.getElementById('regUploadStatus');
+  const file = regFileInput.files[0];
+  if(!file) return;
+  regUploadBtn.disabled = true;
+  status.style.color = 'var(--ink-dim)';
+  status.textContent = '파일 읽는 중...';
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+    if(!rows.length){
+      status.textContent = '업로드할 데이터가 없습니다. 첫 행이 머리글인지 확인해주세요.';
+      status.style.color = 'var(--down)';
+      regUploadBtn.disabled = false;
+      return;
+    }
+    const managed = new Map(allManagedStocks().map(it=>[it.code, it]));
+    let applied = 0, blank = 0;
+    const badRows = [], unknownCats = new Set(), badAccts = new Set();
+    rows.forEach((row, idx)=>{
+      let name = String(pickField(row, REG_HEADER_MAP.name) || '').trim();
+      let code = normCodeKey(pickField(row, REG_HEADER_MAP.code));
+      const category = String(pickField(row, REG_HEADER_MAP.category) || '').trim();
+      let account = String(pickField(row, REG_HEADER_MAP.account) || '').trim();
+      if(!name && !code) return; // 빈 줄
+      if(!code && name){ const f = findStockByName(name); if(f) code = normCodeKey(f.code); }
+      if(code && !name){ const f = findStockByCode(code); name = f ? f.name : ((managed.get(code) || {}).name || ''); }
+      if(!code){ if(badRows.length < 5) badRows.push(`${idx+2}행(종목코드 없음)`); else badRows.more = true; return; }
+      if(!category){ blank++; return; }
+      if(!categoryList.some(c=>c.name === category)){ unknownCats.add(category); return; }
+      if(account){
+        const known = getAccountNames().find(a=> account === a || account.includes(a) || a.includes(account));
+        if(!known){ badAccts.add(account); return; }
+        account = known;
+      }
+      const cur = managed.get(code);
+      const accounts = account ? [account] : (cur && cur.accounts.length ? cur.accounts : ['']);
+      assignCategory({ code, name: name || (cur ? cur.name : code), accounts }, category);
+      applied++;
+    });
+
+    if(applied){
+      saveRegistry(); refreshKnownStockList();
+      renderRegistryPage();
+      afterRegistryChanged();
+      if(typeof populateDivStockSelect === 'function') populateDivStockSelect(document.getElementById('divAccount').value);
+    }
+    const notes = [`업로드 완료 — 자산군 적용 ${applied}종목`];
+    if(blank) notes.push(`자산군 칸이 비어 건너뜀 ${blank}종목`);
+    if(unknownCats.size) notes.push(`등록되지 않은 자산군이라 제외: ${Array.from(unknownCats).join(', ')} (설정 > 자산군 관리에서 먼저 추가하세요)`);
+    if(badAccts.size) notes.push(`등록되지 않은 계좌라 제외: ${Array.from(badAccts).join(', ')}`);
+    if(badRows.length) notes.push(`형식 오류로 제외: ${badRows.join(', ')}${badRows.more ? '…' : ''}`);
+    status.textContent = notes.join('\n');
+    status.style.color = applied ? 'var(--up)' : 'var(--down)';
+    regFileInput.value = '';
+    regUploadBtn.disabled = true;
+  }catch(err){
+    console.error('엑셀 업로드 오류:', err);
+    status.textContent = '업로드 중 오류가 발생했습니다: ' + err.message;
+    status.style.color = 'var(--down)';
+    regUploadBtn.disabled = false;
+  }
 });
 
 // all years present in base data or user entries, ascending
