@@ -352,6 +352,12 @@
   .hist-toolbar select:focus, .hist-toolbar input:focus{ outline:none; border-color:var(--gold-dim); }
   .hist-toolbar input[type=search]{ min-width:200px; flex:1; max-width:320px; }
   .hist-toolbar .pill{ padding:5px 12px; }
+  .hero-period{ flex-direction:column; align-items:flex-start; gap:6px; margin-bottom:0; flex:0 1 auto; }
+  .hero-period .label{ font-size:11px; color:var(--ink-faint); letter-spacing:.03em; }
+  .hero-period .pills{ gap:4px; flex-wrap:nowrap; }
+  .hero-period .pill{ padding:4px 10px; white-space:nowrap; }
+  .hero-period-dates{ display:flex; align-items:center; gap:6px; color:var(--ink-faint); }
+  .hero-period-dates input{ width:124px; padding:4px 6px; font-size:12px; }
   .hist-count{ margin-left:auto; font-size:11.5px; color:var(--ink-faint); }
   #histScroll{ max-height:calc(100vh - 260px); min-height:240px; }
   .type-badge{ display:inline-block; font-size:11px; font-weight:600; padding:1px 8px; border-radius:20px; white-space:nowrap; }
@@ -466,7 +472,21 @@
               <div class="mini"><div class="label">누적 원금</div><div class="value" id="heroPrincipal">–</div></div>
               <div class="mini"><div class="label">총 손익 (배당 포함)</div><div class="value" id="heroGain">–</div></div>
               <div class="mini"><div class="label">누적 배당금</div><div class="value" id="heroDiv">–</div></div>
-              <div class="mini"><div class="label">투자평가 수익률</div><div class="value" id="heroRet">–</div></div>
+              <div class="mini"><div class="label">원금대비 수익률</div><div class="value" id="heroRet">–</div></div>
+            </div>
+            <div class="hero-period hist-toolbar" id="dashPeriodBar">
+              <div class="label">그래프 조회 기간</div>
+              <div class="pills">
+                <button class="pill active" data-dash-preset="all" type="button">전체</button>
+                <button class="pill" data-dash-preset="year" type="button">올해</button>
+                <button class="pill" data-dash-preset="1y" type="button">1년</button>
+                <button class="pill" data-dash-preset="3y" type="button">3년</button>
+              </div>
+              <div class="hero-period-dates">
+                <input type="date" id="dashFrom" aria-label="그래프 조회 시작일">
+                <span>~</span>
+                <input type="date" id="dashTo" aria-label="그래프 조회 종료일">
+              </div>
             </div>
           </div>
         </div>
@@ -487,7 +507,7 @@
         <section class="dg-trend">
           <div class="sec-head">
             <div class="sec-title">자산 추이</div>
-            <div class="sec-sub" id="trendSub">계좌별 평가금 vs 누적 원금</div>
+            <div class="sec-sub" id="trendSub">계좌별 평가금 · 원금</div>
           </div>
           <div class="card">
             <div class="chart-box tall"><canvas id="trendChart"></canvas></div>
@@ -522,7 +542,7 @@
         <section class="dg-monthly">
           <div class="sec-head">
             <div class="sec-title">월별 등락</div>
-            <div class="sec-sub">전월 대비 평가금 증감율 (%) · 전체 기간</div>
+            <div class="sec-sub" id="monthlySub">전월 대비 평가금 증감율 (%) · 전체 기간</div>
           </div>
           <div class="card">
             <div class="chart-box short"><canvas id="monthlyBar"></canvas></div>
@@ -1847,45 +1867,86 @@ function acctValueAt(name, date, accountsMap){
   return { principal, value, estimated, dividends, counted, ret };
 }
 
-// 자산 추이(계좌별 누적 세로막대 + 누적 원금 선)와 월별 수익률을 입력 데이터에서 직접 계산한다.
-function renderTrendCharts(){
+// 계좌 색상을 더 진하게 (amount: 0~1, 작을수록 진함)
+function darkenHex(hex, amount){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex));
+  if(!m) return hex;
+  const n = parseInt(m[1], 16);
+  return '#' + [n>>16, (n>>8)&255, n&255].map(c=> Math.round(c*amount).toString(16).padStart(2,'0')).join('');
+}
+// 대시보드 그래프 조회 기간. 비어 있으면 데이터 전체.
+function dashPeriod(){
+  const r = renderTrendCharts.range || (renderTrendCharts.range = { from:'', to:'', preset:'all' });
   const dates = getSnapshotDates();
-  const sub = document.getElementById('trendSub');
+  const start = dates[0] || '', end = dates[dates.length-1] || '';
+  let from = r.from || start, to = r.to || end;
+  if(from && to && from > to) [from, to] = [to, from];
+  return { from, to, start, end, preset:r.preset };
+}
+function syncDashPeriodBar(){
+  const { from, to, start, end, preset } = dashPeriod();
+  const f = document.getElementById('dashFrom'), t = document.getElementById('dashTo');
+  if(f && document.activeElement !== f) f.value = from;
+  if(t && document.activeElement !== t) t.value = to;
+  [f,t].forEach(el=>{ if(el){ el.min = start; el.max = end; } });
+  document.querySelectorAll('[data-dash-preset]').forEach(b=> b.classList.toggle('active', b.dataset.dashPreset === preset));
+}
+// 자산 추이(계좌별 평가금·원금 누적 세로막대)와 월별 수익률을 입력 데이터에서 직접 계산한다.
+function renderTrendCharts(){
+  const allDates = getSnapshotDates();
+  const sub = document.getElementById('trendSub'), monthlySub = document.getElementById('monthlySub');
+  syncDashPeriodBar();
   if(trendChartInst){ try{ trendChartInst.destroy(); }catch(e){} trendChartInst = null; }
   if(monthlyBarInst){ try{ monthlyBarInst.destroy(); }catch(e){} monthlyBarInst = null; }
-  if(!dates.length){ if(sub) sub.textContent = '입력된 데이터가 없습니다'; return; }
+  if(!allDates.length){ if(sub) sub.textContent = '입력된 데이터가 없습니다'; return; }
+  const { from, to } = dashPeriod();
+  const inRange = allDates.map(d=> d >= from && d <= to);
+  const dates = allDates.filter((d,i)=> inRange[i]);
+  const pick = arr => arr.filter((v,i)=> inRange[i]);
+  if(!dates.length){
+    if(sub) sub.textContent = '선택한 기간에 데이터가 없습니다';
+    if(monthlySub) monthlySub.textContent = '선택한 기간에 데이터가 없습니다';
+    return;
+  }
   const names = getAccountNames();
   const today = toLocalISO(new Date());
   const isMonthEnd = d => { const t = new Date(d+'T00:00:00'); return d === today || new Date(t.getFullYear(), t.getMonth(), t.getDate()+1).getDate() === 1; };
   const labelOf = d => d.slice(2,4)+'.'+d.slice(5,7) + (isMonthEnd(d) ? '' : '.'+d.slice(8,10));
   const labels = dates.map(labelOf);
-  const rows = dates.map(d=>{ const am = getAccountsForDate(d); const per = {}; names.forEach(n=>{ per[n] = acctValueAt(n, d, am); }); return per; });
+  const allRows = allDates.map(d=>{ const am = getAccountsForDate(d); const per = {}; names.forEach(n=>{ per[n] = acctValueAt(n, d, am); }); return per; });
   const fin = v => (typeof v === 'number' && isFinite(v)) ? v : 0;
-  const principalLine = rows.map(r=> names.reduce((s,n)=>s+r[n].principal,0));
-  const totalVal = rows.map(r=> names.reduce((s,n)=>s+r[n].value,0));
-  const divLine = rows.map(r=> names.reduce((s,n)=>s+r[n].counted,0));
+  const allPrincipal = allRows.map(r=> names.reduce((s,n)=>s+r[n].principal,0));
+  const allTotal = allRows.map(r=> names.reduce((s,n)=>s+r[n].value,0));
+  const allDiv = allRows.map(r=> names.reduce((s,n)=>s+r[n].counted,0));
+  const rows = pick(allRows), principalLine = pick(allPrincipal), totalVal = pick(allTotal), divLine = pick(allDiv);
   const anyEstimated = rows.some(r=> names.some(n=> r[n].estimated));
-  if(sub) sub.textContent = `${fmtDot(dates[0])} — ${fmtDot(dates[dates.length-1])} · 계좌별 평가금(누적 막대) vs 누적 원금(선)` + (anyEstimated ? ' · 평가금 미입력 구간은 원금 기준' : '');
+  if(sub) sub.textContent = `${fmtDot(dates[0])} — ${fmtDot(dates[dates.length-1])} · 진한 색 원금 · 계좌 색 평가이익 · 막대 전체 평가금` + (anyEstimated ? ' · 평가금 미입력 구간은 원금 기준' : '');
+  if(monthlySub) monthlySub.textContent = `전월 대비 평가금 증감율 (%) · ${fmtDot(dates[0])} — ${fmtDot(dates[dates.length-1])}`;
 
   const axisFmt = v => v >= 1e8 ? (v/1e8).toFixed(1).replace(/\.0$/,'')+'억' : (v/1e4).toLocaleString('ko-KR')+'만';
-  const barSets = names.map(n=>({
-    type:'bar', label:n, data: rows.map(r=>fin(r[n].value)), backgroundColor: ACCT_COLOR[n], borderWidth:0, stack:'acct', maxBarThickness:38, order:2,
-    _est: rows.map(r=>r[n].estimated)
-  }));
-  const lineSet = { type:'line', label:'누적 원금', data: principalLine.map(fin), borderColor:'#20232b', backgroundColor:'transparent', borderDash:[5,3],
-    borderWidth:1.8, pointRadius:2, pointHoverRadius:4, tension:.15, order:1, stack:undefined };
+  // 한 막대 안에서 계좌마다 원금(진한 색) 위에 평가이익(계좌 색)을 쌓는다. 막대 높이 = 평가금.
+  // 손실이면 원금 칸을 평가금까지만 그리고, 툴팁에는 실제 원금을 보여준다.
+  const barSets = names.flatMap(n=>[
+    { type:'bar', label:n+' 원금', data: rows.map(r=>fin(Math.min(r[n].principal, r[n].value))), backgroundColor: darkenHex(ACCT_COLOR[n], .6), borderWidth:0, stack:'acct', maxBarThickness:38,
+      _principal:true, _actual: rows.map(r=>fin(r[n].principal)) },
+    { type:'bar', label:n+' 평가금', data: rows.map(r=>fin(Math.max(r[n].value - r[n].principal, 0))), backgroundColor: ACCT_COLOR[n], borderWidth:0, stack:'acct', maxBarThickness:38,
+      _legend:n, _actual: rows.map(r=>fin(r[n].value)), _est: rows.map(r=>r[n].estimated) }
+  ]);
   trendChartInst = safeNewChart('trendChart', {
     type:'bar',
-    data:{ labels, datasets:[ ...barSets, lineSet ] },
+    data:{ labels, datasets:barSets },
     options:{
       responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
       plugins:{
-        legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle', padding:18, font:{size:11.5} } },
+        legend:{ position:'top', align:'end',
+          labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle', padding:18, font:{size:11.5}, generateLabels:ch=> Chart.defaults.plugins.legend.labels.generateLabels(ch).filter(l=> !ch.data.datasets[l.datasetIndex]._principal).map(l=> ({...l, text: ch.data.datasets[l.datasetIndex]._legend})) },
+          onClick:(e,item,legend)=>{ const ch = legend.chart, i = item.datasetIndex, vis = !ch.isDatasetVisible(i);
+            [i - 1, i].forEach(k=> ch.setDatasetVisibility(k, vis)); ch.update(); } },
         tooltip:{ backgroundColor:'#20232b', borderColor:'#20232b', borderWidth:1, padding:12, titleColor:'#ffffff', bodyColor:'#ffffff',
           titleFont:{size:12,weight:'600'}, bodyFont:{size:12, family:"'IBM Plex Mono',monospace"},
           callbacks:{
-            label: c => { const est = c.dataset._est && c.dataset._est[c.dataIndex]; return ` ${c.dataset.label}: ${won(c.parsed.y)} 원` + (est ? ' (원금 기준)' : ''); },
-            afterBody: items => { const i = items.length ? items[0].dataIndex : -1; return i >= 0 ? [` 평가금 합계: ${won(totalVal[i])} 원`].concat(divLine[i] ? [` 누적 배당금: ${won(divLine[i])} 원`] : []) : []; }
+            label: c => { const est = c.dataset._est && c.dataset._est[c.dataIndex]; return ` ${c.dataset.label}: ${won(c.dataset._actual[c.dataIndex])} 원` + (est ? ' (원금 기준)' : ''); },
+            afterBody: items => { const i = items.length ? items[0].dataIndex : -1; return i >= 0 ? [` 평가금 합계: ${won(totalVal[i])} 원`, ` 원금 합계: ${won(principalLine[i])} 원`].concat(divLine[i] ? [` 누적 배당금: ${won(divLine[i])} 원`] : []) : []; }
           } }
       },
       scales:{
@@ -1896,11 +1957,12 @@ function renderTrendCharts(){
   });
 
   // 월별 수익률 = (이번 평가금 − 지난 평가금 − 이번 달 순입금) ÷ 지난 평가금  → 입금 자체는 수익으로 잡히지 않음
-  const monthlyReturns = totalVal.map((v,i)=>{
+  // 조회 기간의 첫 달도 기간 밖의 직전 달과 비교하도록 전체 데이터로 계산한 뒤 잘라낸다.
+  const monthlyReturns = pick(allTotal.map((v,i)=>{
     if(i===0) return 0;
-    const prev = totalVal[i-1]; if(!prev) return 0;
-    return (v - prev + (divLine[i] - divLine[i-1]) - (principalLine[i] - principalLine[i-1])) / prev * 100;
-  });
+    const prev = allTotal[i-1]; if(!prev) return 0;
+    return (v - prev + (allDiv[i] - allDiv[i-1]) - (allPrincipal[i] - allPrincipal[i-1])) / prev * 100;
+  }));
   monthlyBarInst = safeNewChart('monthlyBar', {
     type:'bar',
     data:{ labels, datasets:[{ data: monthlyReturns.map(fin),
@@ -1924,6 +1986,25 @@ try{
    STATIC CHARTS (full history, unaffected by 조회일)
    ============================================================ */
 renderTrendCharts();
+document.querySelectorAll('[data-dash-preset]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const preset = btn.dataset.dashPreset, t = new Date(), r = renderTrendCharts.range;
+    r.preset = preset; r.to = '';
+    if(preset === 'all') r.from = '';
+    else if(preset === 'year') r.from = `${t.getFullYear()}-01-01`;
+    else r.from = toLocalISO(new Date(t.getFullYear() - (preset === '3y' ? 3 : 1), t.getMonth(), t.getDate()));
+    renderTrendCharts();
+  });
+});
+['dashFrom','dashTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ev=>{
+    const r = renderTrendCharts.range;
+    r[id === 'dashFrom' ? 'from' : 'to'] = ev.target.value; // 지우면 기본값으로
+    r.preset = (r.from || r.to) ? '' : 'all';
+    ev.target.blur();
+    renderTrendCharts();
+  });
+});
 
 /* ============================================================
    DYNAMIC (date-driven) RENDER
@@ -2037,9 +2118,6 @@ function renderDashboard(requestedIso){
   const totalCounted = accts.reduce((s,a)=>s+a.counted,0);
   const totalGain = totalValuation + totalCounted - totalPrincipal;
   const totalRet = totalPrincipal ? (totalGain/totalPrincipal*100) : 0;
-  const totalInvested = currentHoldings.reduce((s,h)=>s+h[4],0);
-  const totalInvVal = currentHoldings.reduce((s,h)=>s+h[6],0);
-  const investRet = totalInvested ? ((totalInvVal-totalInvested)/totalInvested*100) : 0;
 
   const estNames = accts.filter(a=>a.estimated).map(a=>a.name);
   const noteEl2 = document.getElementById('dateNote');
@@ -2055,8 +2133,8 @@ function renderDashboard(requestedIso){
   if(heroDiv) heroDiv.textContent = won(totalDividends);
   heroGain.className = 'value ' + (totalGain>=0?'up':'down');
   const heroRet = document.getElementById('heroRet');
-  heroRet.textContent = pct(investRet);
-  heroRet.className = 'value ' + (investRet>=0?'up':'down');
+  heroRet.textContent = pct(totalRet);
+  heroRet.className = 'value ' + (totalRet>=0?'up':'down');
 
   try{ renderTrendCharts(); }catch(e){ console.error('renderTrendCharts failed:', e); }
   // ---- donuts ----
