@@ -614,7 +614,7 @@
             <div class="chart-box"><canvas id="principalChart"></canvas></div>
           </div>
 
-          <details class="entry-panel" ><summary>입출금 내역 추가 <span class="hint">직접 입력 · 엑셀 업로드</span></summary>
+          <details class="entry-panel" ><summary>입출금 내역 추가 <span class="hint">직접 입력 · 엑셀 업로드 · 내려받기</span></summary>
           <div class="form-card">
             <div class="form-grid" style="align-items:end;">
               <div class="field"><label>날짜</label><input type="date" id="peDate"></div>
@@ -643,7 +643,7 @@
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자), <b>계좌</b>, <b>구분</b>(입금/출금), <b>금액</b>, <b>메모</b>(선택). 계좌명은 <span id="peUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
-            <div class="form-grid" style="grid-template-columns:auto auto 1fr;align-items:end;">
+            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
                 <label>파일 선택</label>
                 <input type="file" id="peFileInput" accept=".xlsx,.xls,.csv">
@@ -651,6 +651,10 @@
               <div class="field" style="min-width:120px;">
                 <label>&nbsp;</label>
                 <button class="btn btn-primary" id="peUploadBtn" type="button" disabled>업로드 실행</button>
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-ghost" id="peDownloadBtn" type="button">엑셀 내려받기</button>
               </div>
             </div>
             <div id="peUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
@@ -713,7 +717,7 @@
             </div>
           </div>
         </details>
-        <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
+        <details class="entry-panel"><summary>엑셀 업로드 · 내려받기 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>종목명</b>, <b>종목코드</b>(이미 입력해 본 종목이면 종목명만 있어도 됩니다), <b>자산군</b>, <b>계좌</b>(선택).
@@ -721,7 +725,7 @@
               이미 등록된 종목은 자산군만 바뀝니다. 자산군은 <span id="regUploadCategoryHint">설정에 등록된 자산군</span> 중 하나여야 합니다.
               '양식 내려받기'를 누르면 지금 관리 중인 종목이 모두 채워진 파일이 내려오니, 자산군 칸만 채워 다시 올리면 됩니다.
             </p>
-            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
+            <div class="form-grid" style="grid-template-columns:auto auto auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
                 <label>파일 선택</label>
                 <input type="file" id="regFileInput" accept=".xlsx,.xls,.csv">
@@ -733,6 +737,10 @@
               <div class="field" style="min-width:120px;">
                 <label>&nbsp;</label>
                 <button class="btn btn-ghost" id="regTemplateBtn" type="button">양식 내려받기 (CSV)</button>
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-ghost" id="regDownloadBtn" type="button">엑셀 내려받기</button>
               </div>
             </div>
             <div id="regUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
@@ -817,12 +825,12 @@
           </div>
         </details>
 
-        <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
+        <details class="entry-panel"><summary>엑셀 업로드 · 내려받기 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자·기준일), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(이미 입력해 본 종목이면 종목명만 있어도 코드가 자동으로 채워집니다), <b>수량</b>(0이면 전량 매도), <b>투자금</b>(또는 투자금액·매수금액·매입금액). 계좌명은 <span id="txUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
-            <div class="form-grid" style="grid-template-columns:auto auto 1fr;align-items:end;">
+            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
                 <label>파일 선택</label>
                 <input type="file" id="txFileInput" accept=".xlsx,.xls,.csv">
@@ -830,6 +838,10 @@
               <div class="field" style="min-width:120px;">
                 <label>&nbsp;</label>
                 <button class="btn btn-primary" id="txUploadBtn" type="button" disabled>업로드 실행</button>
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-ghost" id="txDownloadBtn" type="button">엑셀 내려받기</button>
               </div>
             </div>
             <div id="txUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
@@ -911,12 +923,12 @@
           </div>
         </details>
 
-        <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
+        <details class="entry-panel"><summary>엑셀 업로드 · 내려받기 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>지급일</b>(또는 날짜·일자), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(선택, 비워두면 종목명으로 등록), <b>배당금</b>(또는 금액), <b>메모</b>(선택). 계좌명은 <span id="divUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
-            <div class="form-grid" style="grid-template-columns:auto auto 1fr;align-items:end;">
+            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
                 <label>파일 선택</label>
                 <input type="file" id="divFileInput" accept=".xlsx,.xls,.csv">
@@ -924,6 +936,10 @@
               <div class="field" style="min-width:120px;">
                 <label>&nbsp;</label>
                 <button class="btn btn-primary" id="divUploadBtn" type="button" disabled>업로드 실행</button>
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>&nbsp;</label>
+                <button class="btn btn-ghost" id="divDownloadBtn" type="button">엑셀 내려받기</button>
               </div>
             </div>
             <div id="divUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
@@ -1046,6 +1062,25 @@
           </div>
         </section>
 
+        <details class="entry-panel"><summary>엑셀 / CSV 업로드 · 내려받기 <span class="hint">구글 스프레드시트 → 파일 → 다운로드 → .xlsx 또는 .csv</span></summary>
+          <div class="form-card">
+            <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 12px;">
+              첫 행은 머리글이어야 합니다. 여러 달을 한 파일에 담아도 됩니다. 인식하는 컬럼:
+              <b>날짜</b>(또는 기준일), <b>종목코드</b>, <b>단가</b>(또는 현재가·종가), <b>종목명</b>(선택, 참고용),
+              <b>계좌</b>, <b>예수금</b>(선택). 한 줄에 <u>종목코드+단가</u> 또는 <u>계좌+예수금</u>을 넣으면 됩니다.
+              같은 날짜·종목이 이미 있으면 덮어씁니다.
+              계좌명은 <span id="valUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+            </p>
+            <div class="form-grid" style="grid-template-columns:auto auto auto auto 1fr;align-items:end;">
+              <div class="field" style="min-width:220px;"><label>파일 선택</label><input type="file" id="valFileInput" accept=".xlsx,.xls,.csv"></div>
+              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-primary" id="valUploadBtn" type="button" disabled>업로드 실행</button></div>
+              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valTemplateBtn" type="button">양식 내려받기 (CSV)</button></div>
+              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valDownloadBtn" type="button">엑셀 내려받기</button></div>
+            </div>
+            <div id="valUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
+          </div>
+        </details>
+
         <section>
           <div class="sec-head">
             <div class="sec-title">종목별 단가 입력</div>
@@ -1074,24 +1109,6 @@
             </table>
           </div>
         </section>
-
-        <details class="entry-panel"><summary>엑셀 / CSV로 일괄 업로드 <span class="hint">구글 스프레드시트 → 파일 → 다운로드 → .xlsx 또는 .csv</span></summary>
-          <div class="form-card">
-            <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 12px;">
-              첫 행은 머리글이어야 합니다. 여러 달을 한 파일에 담아도 됩니다. 인식하는 컬럼:
-              <b>날짜</b>(또는 기준일), <b>종목코드</b>, <b>단가</b>(또는 현재가·종가), <b>종목명</b>(선택, 참고용),
-              <b>계좌</b>, <b>예수금</b>(선택). 한 줄에 <u>종목코드+단가</u> 또는 <u>계좌+예수금</u>을 넣으면 됩니다.
-              같은 날짜·종목이 이미 있으면 덮어씁니다.
-              계좌명은 <span id="valUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
-            </p>
-            <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
-              <div class="field" style="min-width:220px;"><label>파일 선택</label><input type="file" id="valFileInput" accept=".xlsx,.xls,.csv"></div>
-              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-primary" id="valUploadBtn" type="button" disabled>업로드 실행</button></div>
-              <div class="field" style="min-width:120px;"><label>&nbsp;</label><button class="btn btn-ghost" id="valTemplateBtn" type="button">양식 내려받기 (CSV)</button></div>
-            </div>
-            <div id="valUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
-          </div>
-        </details>
 
         <section>
           <div class="sec-head">
@@ -3924,6 +3941,52 @@ document.querySelector('.nav-item[data-page="valuation"]').addEventListener('cli
 });
 }catch(err){
   console.error('Month-end valuation setup error:', err);
+}
+
+/* ============================================================
+   엑셀 내려받기: 각 페이지의 저장된 내역 전체를 .xlsx로 저장.
+   열 이름은 업로드와 같아서 내려받은 파일을 그대로 다시 올릴 수 있다.
+   ============================================================ */
+function downloadSheet(baseName, headers, rows, sheetName){
+  if(typeof XLSX === 'undefined'){ alert('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해주세요.'); return; }
+  if(!rows.length){ alert('내려받을 내역이 없습니다.'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = headers.map(h=> ({ wch: Math.max(10, ...[h, ...rows.map(r=> r[headers.indexOf(h)])].map(v=> String(v === undefined || v === null ? '' : v).length + 4)) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || baseName);
+  XLSX.writeFile(wb, `${baseName}_${toLocalISO(new Date())}.xlsx`);
+}
+const byDate = (a,b)=> String(a.date||'').localeCompare(String(b.date||'')) || ((a.id||0) - (b.id||0));
+try{
+  document.getElementById('peDownloadBtn').addEventListener('click', ()=>{
+    downloadSheet('입출금내역', ['날짜','계좌','구분','금액','메모'],
+      [...principalEntries].sort(byDate).map(e=> [e.date, e.account, e.type, Number(e.amount)||0, e.memo||'']));
+  });
+  document.getElementById('txDownloadBtn').addEventListener('click', ()=>{
+    downloadSheet('월말보유내역', ['날짜','계좌','종목명','종목코드','수량','투자금'],
+      [...holdingEntries].sort(byDate).map(e=> [e.date, e.account, e.name||'', e.code||'', Number(e.qty)||0, Number(e.invested)||0]));
+  });
+  document.getElementById('divDownloadBtn').addEventListener('click', ()=>{
+    downloadSheet('배당금내역', ['지급일','계좌','종목명','종목코드','배당금','비고'],
+      [...userDividends].sort(byDate).map(e=> [e.date, e.account, e.name||'', (e.code && e.code !== '-') ? e.code : '', Number(e.amount)||0, e.memo||'']));
+  });
+  document.getElementById('regDownloadBtn').addEventListener('click', ()=>{
+    const order = getAccountNames();
+    downloadSheet('종목관리', ['종목명','종목코드','자산군','계좌'],
+      [...userStockRegistry].sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''),'ko') || order.indexOf(a.account) - order.indexOf(b.account))
+        .map(e=> [e.name||'', e.code||'', e.category||'', e.account||'']));
+  });
+  document.getElementById('valDownloadBtn').addEventListener('click', ()=>{
+    const rows = [];
+    const nameOf = code => { const f = findStockByCode(code); return f ? f.name : (holdingNameOf(code) || ''); };
+    Array.from(new Set([...Object.keys(priceSnapshots), ...Object.keys(cashSnapshots)])).sort().forEach(d=>{
+      Object.keys(priceSnapshots[d] || {}).sort().forEach(code=> rows.push([d, code, nameOf(code), priceSnapshots[d][code], '', '']));
+      Object.keys(cashSnapshots[d] || {}).forEach(acct=> rows.push([d, '', '', '', acct, cashSnapshots[d][acct]]));
+    });
+    downloadSheet('월말평가금', ['날짜','종목코드','종목명','단가','계좌','예수금'], rows);
+  });
+}catch(err){
+  console.error('Excel download setup error:', err);
 }
 
 /* ============================================================
