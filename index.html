@@ -390,6 +390,8 @@
 
   /* 배당 달력 */
   .heat-table td{ text-align:right; }
+  .month-table thead th:not(:first-child){ text-align:center; }
+  .month-table tbody td:not(:first-child){ text-align:right; font-family:var(--mono); white-space:nowrap; }
   .heat-table td.zero{ color:var(--ink-faint); }
 </style>
 </head>
@@ -1016,7 +1018,7 @@
             <div class="sec-sub">연도 × 월 · 전체 계좌 합계 · 색이 진할수록 금액이 큼</div>
           </div>
           <div class="card table-scroll">
-            <table class="heat-table">
+            <table class="heat-table month-table">
               <thead><tr id="divHeatHead"></tr></thead>
               <tbody id="divHeatTable"></tbody>
             </table>
@@ -1061,7 +1063,7 @@
           </div>
           <div class="pills" id="divYearFilter" style="margin-bottom:16px;"></div>
           <div class="card table-scroll">
-            <table>
+            <table class="month-table">
               <thead><tr id="divMonthlyHead"></tr></thead>
               <tbody id="divMonthlyTable"></tbody>
             </table>
