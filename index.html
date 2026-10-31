@@ -143,6 +143,8 @@
 
   .grid-2{ display:grid; grid-template-columns: 1.6fr 1fr; gap:20px; }
   .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .grid-2.grid-even{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  @media(max-width:900px){ .grid-2.grid-even{ grid-template-columns:1fr; } }
   @media(max-width:900px){ .grid-2{ grid-template-columns:1fr; } .grid-4{ grid-template-columns:repeat(2,1fr);} }
   .settings-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; align-items:start; }
   .settings-grid .form-grid{ grid-template-columns:minmax(0,1fr) 52px 64px !important; gap:8px; }
@@ -361,6 +363,9 @@
     .hero-side .mini .value{ font-size:clamp(13px,1.15vw,18px); }
     .hero-side .mini .label{ white-space:nowrap; }
   }
+  .page-head-row{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; }
+  .page-head-text{ flex:1 1 auto; min-width:0; }
+  @media(max-width:900px){ .page-head-row{ flex-wrap:wrap; } }
   .hero-period .label{ font-size:11px; color:var(--ink-faint); letter-spacing:.03em; }
   .hero-period .pills{ gap:4px; flex-wrap:nowrap; }
   .hero-period .pill{ padding:3px 9px; white-space:nowrap; }
@@ -926,9 +931,27 @@
     <section class="page" id="page-dividends" style="padding:0;border:none;">
       <div class="page-head">
         <div class="wrap">
-          <div class="eyebrow">Dividend Income</div>
-          <h2>배당금 (분배금) 관리</h2>
-          <p>계좌별로 받은 배당금·분배금 내역을 연도·월별로 확인할 수 있습니다. 원본 스프레드시트 기준 데이터(2023.12~2026.06)에 더해, 아래에서 직접 배당금을 등록하면 즉시 요약·차트·표와 대시보드 수익률(원금 대비, 배당 포함)에 반영됩니다.</p>
+          <div class="page-head-row">
+            <div class="page-head-text">
+              <div class="eyebrow">Dividend Income</div>
+              <h2>배당금 (분배금) 관리</h2>
+              <p>계좌별로 받은 배당금·분배금 내역을 연도·월별로 확인할 수 있습니다. 원본 스프레드시트 기준 데이터(2023.12~2026.06)에 더해, 아래에서 직접 배당금을 등록하면 즉시 요약·차트·표와 대시보드 수익률(원금 대비, 배당 포함)에 반영됩니다.</p>
+            </div>
+            <div class="hero-period hist-toolbar" id="divPeriodBar">
+              <div class="label">조회 기간</div>
+              <div class="pills">
+                <button class="pill active" data-div-preset="all" type="button">전체</button>
+                <button class="pill" data-div-preset="year" type="button">올해</button>
+                <button class="pill" data-div-preset="1y" type="button">1년</button>
+                <button class="pill" data-div-preset="3y" type="button">3년</button>
+              </div>
+              <div class="hero-period-dates">
+                <input type="month" id="divFrom" aria-label="조회 시작 월">
+                <span>~</span>
+                <input type="month" id="divTo" aria-label="조회 종료 월">
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="wrap">
@@ -980,7 +1003,11 @@
         </details>
 
         <section>
-          <div class="summary-strip" id="divSummary"></div>
+          <div class="sec-head">
+            <div class="sec-title">계좌별 누적 배당금</div>
+            <div class="sec-sub" id="divAcctSub">전체 기간 합계</div>
+          </div>
+          <div class="grid-4" id="divAcctCards"></div>
         </section>
 
         <section>
@@ -998,14 +1025,6 @@
 
         <section>
           <div class="sec-head">
-            <div class="sec-title">계좌별 누적 배당금</div>
-            <div class="sec-sub">2023.12 ~ 2026.06 합계</div>
-          </div>
-          <div class="grid-4" id="divAcctCards"></div>
-        </section>
-
-        <section>
-          <div class="sec-head">
             <div class="sec-title">월별 배당금 추이</div>
             <div class="sec-sub" id="divMonthlyChartSub">계좌별 누적 막대</div>
           </div>
@@ -1018,9 +1037,9 @@
         <section>
           <div class="sec-head">
             <div class="sec-title">계좌별 비중</div>
-            <div class="sec-sub">전체기간 누적 배당금 기준</div>
+            <div class="sec-sub" id="divShareSub">전체 기간 누적 배당금 기준</div>
           </div>
-          <div class="grid-2">
+          <div class="grid-2 grid-even">
             <div class="card">
               <h3>계좌별 배당금 비중</h3>
               <div class="chart-box"><canvas id="divDonut"></canvas></div>
@@ -3187,11 +3206,35 @@ regUploadBtn.addEventListener('click', async ()=>{
   }
 });
 
-// all years present in base data or user entries, ascending
+// 배당금 조회 기간(YYYY-MM). 비어 있으면 배당금이 있는 첫 달 ~ 마지막 달.
+function divPeriod(){
+  const r = renderDividendsPage.range || (renderDividendsPage.range = { from:'', to:'', preset:'all' });
+  let start = '', end = '';
+  const see = ym => { if(!start || ym < start) start = ym; if(ym > end) end = ym; };
+  Object.values(dividendBase).forEach(byYear=> Object.keys(byYear).forEach(y=>
+    byYear[y].forEach((v,i)=>{ if(v) see(`${y}-${String(i+1).padStart(2,'0')}`); })));
+  userDividends.forEach(d=>{ if(d.date) see(d.date.slice(0,7)); });
+  if(!end){ const t = new Date(); end = start = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`; }
+  let from = r.from || start, to = r.to || end;
+  if(from && to && from > to) [from, to] = [to, from];
+  return { from, to, start, end, preset:r.preset };
+}
+function syncDivPeriodBar(period){
+  const { from, to, start, end, preset } = period;
+  const f = document.getElementById('divFrom'), t = document.getElementById('divTo');
+  if(document.activeElement !== f) f.value = from;
+  if(document.activeElement !== t) t.value = to;
+  [f,t].forEach(el=>{ el.min = start; el.max = end; });
+  document.querySelectorAll('[data-div-preset]').forEach(b=> b.classList.toggle('active', b.dataset.divPreset === preset));
+}
+
+// all years in the selected period (base data or user entries), ascending
 function divYearsList(){
   const years = new Set([2023,2024,2025,2026]);
   userDividends.forEach(d=>{ if(d.date) years.add(parseInt(d.date.slice(0,4),10)); });
-  return Array.from(years).sort((a,b)=>a-b);
+  const { from, to } = renderDividendsPage.period;
+  const list = Array.from(years).filter(y=> (!from || y >= +from.slice(0,4)) && (!to || y <= +to.slice(0,4))).sort((a,b)=>a-b);
+  return list.length ? list : [to ? +to.slice(0,4) : new Date().getFullYear()];
 }
 
 // merged 12-month array for an account+year (base + user-registered entries)
@@ -3203,7 +3246,8 @@ function divMonthlyArray(account, year){
       if(m>=1 && m<=12) base[m-1] += Number(d.amount)||0;
     }
   });
-  return base;
+  const { from, to } = renderDividendsPage.period;
+  return base.map((v,i)=>{ const ym = `${year}-${String(i+1).padStart(2,'0')}`; return (ym >= from && ym <= to) ? v : 0; });
 }
 function divYearTotal(account, year){ return divMonthlyArray(account,year).reduce((s,n)=>s+n,0); }
 function divAcctTotal(account){ return divYearsList().reduce((s,y)=>s+divYearTotal(account,y),0); }
@@ -3211,31 +3255,15 @@ function divAcctTotal(account){ return divYearsList().reduce((s,y)=>s+divYearTot
 let divMonthlyChartInst=null, divDonutInst=null;
 
 function renderDividendsPage(){
+  const period = renderDividendsPage.period = divPeriod();
+  syncDivPeriodBar(period);
+  const dotYm = ym => ym.replace('-','.');
+  const periodText = `${dotYm(period.from)} ~ ${dotYm(period.to)}`;
   const years = divYearsList();
   const grandTotal = getAccountNames().reduce((s,a)=>s+divAcctTotal(a),0);
   const latestYear = years[years.length-1];
-
-  // last 12 months relative to the most recent month that has any data (base or user)
-  let last12 = 0;
-  getAccountNames().forEach(a=>{
-    years.forEach(y=>{
-      const arr = divMonthlyArray(a,y);
-      arr.forEach((v,i)=>{
-        const monthIndex = y*12 + i; // absolute month counter
-        const latestMonthIndex = latestYear*12 + 11;
-        if(latestMonthIndex - monthIndex < 12) last12 += v;
-      });
-    });
-  });
-
-  const topAcct = [...getAccountNames()].sort((a,b)=>divAcctTotal(b)-divAcctTotal(a))[0];
-
-  document.getElementById('divSummary').innerHTML = `
-    <div class="stat-card"><div class="label">누적 배당금 (전체기간)</div><div class="value pos">${won(grandTotal)}</div></div>
-    <div class="stat-card"><div class="label">최근 12개월</div><div class="value">${won(last12)}</div></div>
-    <div class="stat-card"><div class="label">배당금 최다 계좌</div><div class="value" style="font-size:18px;color:${ACCT_COLOR[topAcct]}">${topAcct}</div></div>
-    <div class="stat-card"><div class="label">직접 등록한 내역</div><div class="value">${userDividends.length}건</div></div>
-  `;
+  document.getElementById('divAcctSub').textContent = `${periodText} 합계`;
+  document.getElementById('divShareSub').textContent = `${periodText} 누적 배당금 기준`;
 
   document.getElementById('divAcctCards').innerHTML = getAccountNames().map(a=>{
     const total = divAcctTotal(a);
@@ -3250,14 +3278,16 @@ function renderDividendsPage(){
     </div>`;
   }).join('');
 
-  document.getElementById('divMonthlyChartSub').textContent = `${years[0]}.01 ~ ${latestYear}.12 · 계좌별 누적 막대`;
+  document.getElementById('divMonthlyChartSub').textContent = `${periodText} · 계좌별 누적 막대`;
 
-  // monthly stacked bar across every year present
-  const divMonthlyLabels = [];
-  years.forEach(y=>{ for(let m=1;m<=12;m++) divMonthlyLabels.push(`${String(y).slice(2)}.${String(m).padStart(2,'0')}`); });
+  // monthly stacked bar across the selected months
+  const chartMonths = [];
+  years.forEach(y=>{ for(let m=1;m<=12;m++){ const mm = String(m).padStart(2,'0'), ym = `${y}-${mm}`;
+    if(ym >= period.from && ym <= period.to) chartMonths.push({ y, i:m-1, label:`${String(y).slice(2)}.${mm}` }); } });
+  const divMonthlyLabels = chartMonths.map(m=>m.label);
   const monthlyDatasets = getAccountNames().map(a=>({
     label:a,
-    data: years.flatMap(y=>divMonthlyArray(a,y)),
+    data: chartMonths.map(m=>divMonthlyArray(a,m.y)[m.i]),
     backgroundColor: ACCT_COLOR[a],
     borderRadius:2, maxBarThickness:16,
   }));
@@ -3358,8 +3388,10 @@ function renderDivMonthlyTable(year){
   const head = document.getElementById('divMonthlyHead');
   head.innerHTML = '<th>계좌</th>' + Array.from({length:12},(_,i)=>`<th>${i+1}월</th>`).join('') + '<th>합계</th>';
 
+  const monthTotals = Array(12).fill(0);
   document.getElementById('divMonthlyTable').innerHTML = getAccountNames().map(a=>{
     const arr = divMonthlyArray(a, year);
+    arr.forEach((v,i)=>{ monthTotals[i] += v; });
     const cells = arr.map(v=> `<td>${v ? won(v) : '-'}</td>`).join('');
     const total = arr.reduce((s,n)=>s+n,0);
     return `<tr>
@@ -3367,7 +3399,11 @@ function renderDivMonthlyTable(year){
       ${cells}
       <td style="font-weight:600;">${won(total)}</td>
     </tr>`;
-  }).join('');
+  }).join('') + `<tr style="background:var(--card-hi);">
+      <td style="font-weight:600;">월별 합계</td>
+      ${monthTotals.map(v=>`<td style="font-weight:600;">${v ? won(v) : '-'}</td>`).join('')}
+      <td style="font-weight:600;color:var(--gold);">${won(monthTotals.reduce((s,n)=>s+n,0))}</td>
+    </tr>`;
 }
 
 function renderDivUserTable(){
@@ -3521,6 +3557,26 @@ divUploadBtn.addEventListener('click', async ()=>{
 });
 
 try{ renderDividendsPage(); }catch(e){ console.error('initial renderDividendsPage failed:', e); }
+document.querySelectorAll('[data-div-preset]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const preset = btn.dataset.divPreset, t = new Date(), r = renderDividendsPage.range;
+    const ym = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    r.preset = preset; r.to = '';
+    if(preset === 'all') r.from = '';
+    else if(preset === 'year') r.from = `${t.getFullYear()}-01`;
+    else r.from = ym(new Date(t.getFullYear() - (preset === '3y' ? 3 : 1), t.getMonth() + 1, 1));
+    renderDividendsPage();
+  });
+});
+['divFrom','divTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ev=>{
+    const r = renderDividendsPage.range;
+    r[id === 'divFrom' ? 'from' : 'to'] = ev.target.value; // 지우면 기본값으로
+    r.preset = (r.from || r.to) ? '' : 'all';
+    ev.target.blur();
+    renderDividendsPage();
+  });
+});
 
 
 }catch(err){
