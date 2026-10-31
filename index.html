@@ -144,6 +144,19 @@
   .grid-2{ display:grid; grid-template-columns: 1.6fr 1fr; gap:20px; }
   .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
   @media(max-width:900px){ .grid-2{ grid-template-columns:1fr; } .grid-4{ grid-template-columns:repeat(2,1fr);} }
+  .settings-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; align-items:start; }
+  .settings-grid .form-grid{ grid-template-columns:minmax(0,1fr) 52px 64px !important; gap:8px; }
+  .settings-grid .field{ min-width:0 !important; }
+  .settings-grid .field label{ white-space:nowrap; }
+  .settings-grid .field .btn{ width:100%; padding-left:0; padding-right:0; white-space:nowrap; }
+  .settings-grid .card{ padding-left:12px; padding-right:12px; }
+  .settings-grid .field input[type=color]{ height:34px !important; }
+  .settings-grid .cat-row{ gap:8px; }
+  .settings-grid .cat-row > div:first-child{ min-width:0; }
+  .settings-grid .cat-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .settings-grid .cat-actions{ flex:none; gap:4px; }
+  .settings-grid .icon-btn, .settings-grid .btn-danger{ padding:5px 7px; white-space:nowrap; }
+  @media(max-width:1180px){ .settings-grid{ grid-template-columns:1fr; } }
 
   .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; box-shadow:0 1px 3px rgba(20,20,15,0.04); }
   .card h3{ font-size:13px; font-weight:600; color:var(--ink-dim); letter-spacing:.02em; margin-bottom:14px; }
@@ -1224,6 +1237,7 @@
         </div>
       </div>
       <div class="wrap">
+        <div class="settings-grid">
         <section>
           <div class="sec-head">
             <div class="sec-title">메뉴 순서</div>
@@ -1253,6 +1267,24 @@
 
         <section>
           <div class="sec-head">
+            <div class="sec-title">자산군 관리</div>
+            <div class="sec-sub">자산군 · 순서 · 색상</div>
+          </div>
+          <div class="form-card" style="margin-bottom:20px;">
+            <div class="form-grid" style="grid-template-columns:1fr auto auto;align-items:end;">
+              <div class="field"><label>새 자산군 이름</label><input type="text" id="newCategoryName" placeholder="예: 리츠"></div>
+              <div class="field" style="min-width:90px;"><label>색상</label><input type="color" id="newCategoryColor" value="#8a8d99" style="height:38px;padding:2px;"></div>
+              <div class="field" style="min-width:100px;"><label>&nbsp;</label><button class="btn btn-primary" id="addCategory" type="button">추가</button></div>
+            </div>
+          </div>
+          <div class="card">
+            <div id="categoryListContainer"></div>
+          </div>
+        </section>
+        </div>
+
+        <section>
+          <div class="sec-head">
             <div class="sec-title">종목 일괄등록</div>
             <div class="sec-sub">종목명 검색용 전체 목록 (계좌 없이)</div>
           </div>
@@ -1267,23 +1299,6 @@
             </div>
             <div id="masterCount" style="margin-top:12px;font-size:12.5px;color:var(--ink-dim);"></div>
             <div id="masterUploadStatus" style="margin-top:8px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
-          </div>
-        </section>
-
-        <section>
-          <div class="sec-head">
-            <div class="sec-title">자산군 관리</div>
-            <div class="sec-sub">자산군 · 순서 · 색상</div>
-          </div>
-          <div class="form-card" style="margin-bottom:20px;">
-            <div class="form-grid" style="grid-template-columns:1fr auto auto;align-items:end;">
-              <div class="field"><label>새 자산군 이름</label><input type="text" id="newCategoryName" placeholder="예: 리츠"></div>
-              <div class="field" style="min-width:90px;"><label>색상</label><input type="color" id="newCategoryColor" value="#8a8d99" style="height:38px;padding:2px;"></div>
-              <div class="field" style="min-width:100px;"><label>&nbsp;</label><button class="btn btn-primary" id="addCategory" type="button">추가</button></div>
-            </div>
-          </div>
-          <div class="card">
-            <div id="categoryListContainer"></div>
           </div>
         </section>
       </div>
