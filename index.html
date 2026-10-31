@@ -597,6 +597,17 @@
       </div>
       <div class="wrap">
         <section>
+          <div class="hist-toolbar" id="pePeriodBar">
+            <div class="pills">
+              <button class="pill active" data-pe-preset="all" type="button">전체</button>
+              <button class="pill" data-pe-preset="year" type="button">올해</button>
+              <button class="pill" data-pe-preset="1y" type="button">최근 1년</button>
+              <button class="pill" data-pe-preset="3y" type="button">최근 3년</button>
+            </div>
+            <input type="date" id="peFrom" aria-label="조회 시작일">
+            <span style="color:var(--ink-faint);">~</span>
+            <input type="date" id="peTo" aria-label="조회 종료일">
+          </div>
           <div class="summary-strip" id="principalSummary"></div>
           <details class="entry-panel" style="margin-top:0;"><summary>입출금 내역 추가</summary>
           <div class="form-card">
@@ -623,6 +634,11 @@
             </div>
           </div>
           </details>
+
+          <div class="card" style="margin-top:10px;">
+            <h3 id="peChartTitle">계좌별 누적 원금 추이</h3>
+            <div class="chart-box"><canvas id="principalChart"></canvas></div>
+          </div>
 
           <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
           <div class="form-card">
@@ -1560,6 +1576,9 @@ function wireStockPair(nameId, codeId, statusId, codeOptional){
 // account dated on or before it — see getPrincipal() below.
 let principalEntries = [];
 try{ principalEntries = JSON.parse(localStorage.getItem('principalEntries') || '[]'); }catch(e){ principalEntries = []; }
+// 원금 관리 조회 기간. 비어 있으면 데이터가 시작된 날부터 마지막 날까지(기본값). 저장하지 않으므로 새로고침하면 기본값으로 돌아간다.
+const principalRange = { from:'', to:'', preset:'all' };
+let principalChartInst = null;
 
 // 매수·매도 장부는 폐지됨: 월말 보유 현황으로 대체 (예전 장부는 삭제)
 try{ localStorage.removeItem('transactions'); }catch(e){}
@@ -2128,19 +2147,89 @@ try{ triggerRender(); }catch(e){ console.error('initial triggerRender failed:', 
 /* ============================================================
    PRINCIPAL PAGE
    ============================================================ */
+function principalPeriod(){
+  const dates = getSnapshotDates();
+  const entryLast = principalEntries.reduce((m,e)=> (e.date && e.date > m) ? e.date : m, '');
+  const start = getDataStartDate() || '';
+  const end = [dates.length ? dates[dates.length-1] : '', entryLast].sort().pop();
+  let from = principalRange.from || start, to = principalRange.to || end;
+  if(from && to && from > to) [from, to] = [to, from];
+  return { from, to, start, end };
+}
+// 표시할 월말 날짜(오름차순). 종료일을 월 중간으로 고르면 그 날짜도 마지막 줄로 넣는다.
+function principalDatesInRange(){
+  const { from, to, start, end } = principalPeriod();
+  const dates = getSnapshotDates().filter(d=> d >= from && d <= to);
+  if(principalRange.to && to >= start && to <= end && !dates.includes(to)) dates.push(to);
+  return dates.sort();
+}
+function syncPrincipalPeriodBar(){
+  const { from, to, start, end } = principalPeriod();
+  const f = document.getElementById('peFrom'), t = document.getElementById('peTo');
+  if(f && document.activeElement !== f) f.value = from;
+  if(t && document.activeElement !== t) t.value = to;
+  document.querySelectorAll('[data-pe-preset]').forEach(b=> b.classList.toggle('active', b.dataset.pePreset === principalRange.preset));
+}
+function renderPrincipalChart(dates){
+  if(principalChartInst){ try{ principalChartInst.destroy(); }catch(e){} principalChartInst = null; }
+  const title = document.getElementById('peChartTitle');
+  if(!dates.length){
+    if(title) title.textContent = '계좌별 누적 원금 추이';
+    setChartMsg('principalChart', '이 기간에 표시할 데이터가 없습니다.', false);
+    return;
+  }
+  const names = getAccountNames();
+  const series = names.map(n=> dates.map(d=> getPrincipal(n, d)));
+  const totals = dates.map((d,i)=> series.reduce((t,arr)=> t + arr[i], 0));
+  if(title) title.textContent = `계좌별 누적 원금 추이 · ${fmtDot(dates[0])} ~ ${fmtDot(dates[dates.length-1])}`;
+  const axisFmt = v => v === 0 ? '0' : Math.abs(v) >= 1e8 ? (v/1e8).toFixed(1).replace(/\.0$/,'')+'억' : (v/1e4).toLocaleString('ko-KR')+'만';
+  principalChartInst = safeNewChart('principalChart', {
+    type:'bar',
+    data:{ labels: dates.map(d=> d.slice(2,4)+'.'+d.slice(5,7)),
+      datasets: names.map((n,i)=>({ label:n, data:series[i], backgroundColor:ACCT_COLOR[n], borderWidth:0, stack:'acct', maxBarThickness:38 })) },
+    options:{
+      responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, usePointStyle:true, pointStyle:'circle', padding:18, font:{size:11.5} } },
+        tooltip:{ backgroundColor:'#20232b', borderColor:'#20232b', borderWidth:1, padding:12, titleColor:'#ffffff', bodyColor:'#ffffff',
+          callbacks:{
+            title: items => items.length ? fmtDot(dates[items[0].dataIndex]) : '',
+            label: c => ` ${c.dataset.label}: ${won(c.parsed.y)} 원`,
+            afterBody: items => {
+              const i = items.length ? items[0].dataIndex : -1;
+              if(i < 0) return [];
+              const lines = [` 합계: ${won(totals[i])} 원`];
+              if(i > 0){ const net = totals[i] - totals[i-1]; lines.push(` 전월 대비: ${net>=0?'+':'−'}${won(Math.abs(net))} 원`); }
+              return lines;
+            }
+          } }
+      },
+      scales:{
+        x:{ stacked:true, grid:{ display:false }, ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:14, font:{size:10.5} } },
+        y:{ stacked:true, beginAtZero:true, grid:{ color:'#eeeeec' }, ticks:{ callback:axisFmt, font:{size:10.5} } }
+      }
+    }
+  });
+}
+
 function renderPrincipalPage(){
   const tbody = document.getElementById('principalTable');
   const empty = document.getElementById('principalEmpty');
-  const datesDesc = [...getSnapshotDates()].sort().reverse();
+  syncPrincipalPeriodBar();
+  const period = principalPeriod();
+  const ascDates = principalDatesInRange();
+  try{ renderPrincipalChart(ascDates); }catch(e){ console.error('renderPrincipalChart failed:', e); }
+  const inRangeEntries = principalEntries.filter(e=> e.date >= period.from && e.date <= period.to);
+  const datesDesc = [...ascDates].reverse();
 
   if(datesDesc.length === 0){
     tbody.innerHTML = '';
     empty.style.display = 'block';
     document.getElementById('principalSummary').innerHTML = `
       <div class="stat-card"><div class="label">전체 항목 수</div><div class="value">0건</div></div>
-      <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${principalEntries.length}건</div></div>
-      <div class="stat-card"><div class="label">현재 대시보드 조회일</div><div class="value" style="font-size:16px;">–</div></div>
-      <div class="stat-card"><div class="label">표시 기간</div><div class="value" style="font-size:16px;">–</div></div>
+      <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${inRangeEntries.length}건</div></div>
+      <div class="stat-card"><div class="label">현재 대시보드 조회일</div><div class="value" style="font-size:16px;">${fmtDot(currentSnapshotDate)}</div></div>
+      <div class="stat-card"><div class="label">표시 기간</div><div class="value" style="font-size:16px;">${period.from ? fmtDot(period.from) + ' ~ ' + fmtDot(period.to) : '–'}</div></div>
     `;
     return;
   }
@@ -2170,9 +2259,9 @@ function renderPrincipalPage(){
 
   document.getElementById('principalSummary').innerHTML = `
     <div class="stat-card"><div class="label">전체 항목 수</div><div class="value">${datesDesc.length * getAccountNames().length}건</div></div>
-    <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${principalEntries.length}건</div></div>
+    <div class="stat-card"><div class="label">입출금 내역 건수</div><div class="value pos">${inRangeEntries.length}건</div></div>
     <div class="stat-card"><div class="label">현재 대시보드 조회일</div><div class="value" style="font-size:16px;">${fmtDot(currentSnapshotDate)}</div></div>
-    <div class="stat-card"><div class="label">표시 기간</div><div class="value" style="font-size:16px;">${fmtDot(datesDesc[datesDesc.length-1])} ~ ${fmtDot(datesDesc[0])}</div></div>
+    <div class="stat-card"><div class="label">표시 기간</div><div class="value" style="font-size:16px;">${fmtDot(period.from)} ~ ${fmtDot(period.to)}</div></div>
   `;
 
   tbody.querySelectorAll('.date-link').forEach(el=>{
@@ -2186,11 +2275,13 @@ function renderPrincipalPage(){
 try{ renderPrincipalPage(); }catch(e){ console.error('initial renderPrincipalPage failed:', e); }
 
 function renderPrincipalEntryTable(){
-  const sorted = [...principalEntries].sort((a,b)=> b.date.localeCompare(a.date) || b.id - a.id);
+  const { from, to } = principalPeriod();
+  const sorted = principalEntries.filter(e=> e.date >= from && e.date <= to).sort((a,b)=> b.date.localeCompare(a.date) || b.id - a.id);
   const tbody = document.getElementById('principalEntryTable');
   const empty = document.getElementById('principalEntryEmpty');
   if(sorted.length === 0){
     tbody.innerHTML = ''; empty.style.display = 'block';
+    empty.textContent = principalEntries.length ? '이 기간에 입출금 내역이 없습니다.' : '입력된 입출금 내역이 없습니다.';
   } else {
     empty.style.display = 'none';
     tbody.innerHTML = sorted.map(e=>`
@@ -2215,6 +2306,29 @@ function renderPrincipalEntryTable(){
   }
 }
 try{ renderPrincipalEntryTable(); }catch(e){ console.error('initial renderPrincipalEntryTable failed:', e); }
+
+function applyPrincipalRange(){
+  renderPrincipalEntryTable();
+  renderPrincipalPage();
+}
+document.querySelectorAll('[data-pe-preset]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const preset = btn.dataset.pePreset, t = new Date();
+    principalRange.preset = preset; principalRange.to = '';
+    if(preset === 'all') principalRange.from = '';
+    else if(preset === 'year') principalRange.from = `${t.getFullYear()}-01-01`;
+    else principalRange.from = toLocalISO(new Date(t.getFullYear() - (preset === '3y' ? 3 : 1), t.getMonth(), t.getDate()));
+    applyPrincipalRange();
+  });
+});
+['peFrom','peTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ev=>{
+    principalRange[id === 'peFrom' ? 'from' : 'to'] = ev.target.value; // 지우면 기본값으로
+    principalRange.preset = (principalRange.from || principalRange.to) ? '' : 'all';
+    ev.target.blur();
+    applyPrincipalRange();
+  });
+});
 
 document.getElementById('peDate').value = toLocalISO(new Date());
 
