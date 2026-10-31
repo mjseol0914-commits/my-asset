@@ -609,7 +609,12 @@
             <input type="date" id="peTo" aria-label="조회 종료일">
           </div>
           <div class="summary-strip" id="principalSummary"></div>
-          <details class="entry-panel" style="margin-top:0;"><summary>입출금 내역 추가</summary>
+          <div class="card" style="margin-bottom:10px;">
+            <h3 id="peChartTitle">계좌별 누적 원금 추이</h3>
+            <div class="chart-box"><canvas id="principalChart"></canvas></div>
+          </div>
+
+          <details class="entry-panel" ><summary>입출금 내역 추가 <span class="hint">직접 입력 · 엑셀 업로드</span></summary>
           <div class="form-card">
             <div class="form-grid" style="align-items:end;">
               <div class="field"><label>날짜</label><input type="date" id="peDate"></div>
@@ -632,16 +637,9 @@
               <button class="btn btn-ghost" id="resetPrincipal" style="color:var(--down);border-color:var(--down);">입출금 내역 전체 삭제</button>
               <span class="toast" id="peToast">추가되었습니다 ✓</span>
             </div>
-          </div>
-          </details>
-
-          <div class="card" style="margin-top:10px;">
-            <h3 id="peChartTitle">계좌별 누적 원금 추이</h3>
-            <div class="chart-box"><canvas id="principalChart"></canvas></div>
-          </div>
-
-          <details class="entry-panel"><summary>엑셀로 일괄 업로드 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
-          <div class="form-card">
+          
+            <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px;">
+              <h3 style="margin-bottom:10px;font-size:13px;font-weight:600;color:var(--ink-dim);">엑셀로 일괄 업로드 <span style="font-weight:400;font-size:11.5px;color:var(--ink-faint);">.xlsx · .xls · .csv 지원</span></h3>
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
               첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자), <b>계좌</b>, <b>구분</b>(입금/출금), <b>금액</b>, <b>메모</b>(선택). 계좌명은 <span id="peUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
             </p>
@@ -656,6 +654,7 @@
               </div>
             </div>
             <div id="peUploadStatus" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);white-space:pre-line;"></div>
+            </div>
           </div>
           </details>
 
