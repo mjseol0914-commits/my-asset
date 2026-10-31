@@ -641,7 +641,7 @@
             <div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px;">
               <h3 style="margin-bottom:10px;font-size:13px;font-weight:600;color:var(--ink-dim);">엑셀로 일괄 업로드 <span style="font-weight:400;font-size:11.5px;color:var(--ink-faint);">.xlsx · .xls · .csv 지원</span></h3>
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
-              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자), <b>계좌</b>, <b>구분</b>(입금/출금), <b>금액</b>, <b>메모</b>(선택). 계좌명은 <span id="peUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>날짜</b>(또는 일자), <b>계좌</b>, <b>구분</b>(입금/출금), <b>금액</b>, <b>메모</b>(선택). 계좌명은 <span id="peUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다. 날짜·계좌·구분·금액이 같은 내역이 이미 있으면 건너뜁니다.
             </p>
             <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
@@ -926,7 +926,7 @@
         <details class="entry-panel"><summary>엑셀 업로드 · 내려받기 <span class="hint">.xlsx · .xls · .csv 지원</span></summary>
           <div class="form-card">
             <p style="font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin:0 0 16px;">
-              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>지급일</b>(또는 날짜·일자), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(선택, 비워두면 종목명으로 등록), <b>배당금</b>(또는 금액), <b>메모</b>(선택). 계좌명은 <span id="divUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다.
+              첫 번째 행은 머리글이어야 합니다. 다음 컬럼명을 인식합니다 — <b>지급일</b>(또는 날짜·일자), <b>계좌</b>, <b>종목명</b>, <b>종목코드</b>(선택, 비워두면 종목명으로 등록), <b>배당금</b>(또는 금액), <b>메모</b>(선택). 계좌명은 <span id="divUploadAccountHint">설정에 등록된 계좌</span> 중 하나와 일치해야 합니다. 지급일·계좌·종목·금액이 같은 내역이 이미 있으면 건너뜁니다.
             </p>
             <div class="form-grid" style="grid-template-columns:auto auto auto 1fr;align-items:end;">
               <div class="field" style="min-width:220px;">
@@ -2439,8 +2439,11 @@ peUploadBtn.addEventListener('click', async ()=>{
       addedCount++;
     });
 
-    if(parsed.length){
-      principalEntries.push(...parsed);
+    const merged = mergeUploaded(principalEntries, parsed,
+      e=> [e.date, e.account, e.type, Number(e.amount)].join('\u0000'), ()=>true);
+    addedCount = merged.fresh.length;
+    if(addedCount || merged.memoUpdated){
+      principalEntries.push(...merged.fresh);
       localStorage.setItem('principalEntries', JSON.stringify(principalEntries));
       scheduleAutoPush();
       renderPrincipalEntryTable();
@@ -2448,8 +2451,8 @@ peUploadBtn.addEventListener('click', async ()=>{
       triggerRender();
     }
 
-    status.textContent = `업로드 완료 — 추가 ${addedCount}건, 형식 오류로 제외 ${skippedCount}건`;
-    status.style.color = addedCount ? 'var(--up)' : 'var(--down)';
+    status.textContent = uploadResultText(addedCount, merged, skippedCount);
+    status.style.color = (addedCount || merged.duplicates) ? 'var(--up)' : 'var(--down)';
     peFileInput.value = '';
     peUploadBtn.disabled = true;
   }catch(err){
@@ -2587,6 +2590,32 @@ const TX_HEADER_MAP = {
   qty: ['수량','수량(주)','보유수량','qty'],
   invested: ['투자금','투자금액','투자금합계','매수금액','매입금액','invested'],
 };
+// 재업로드 중복 방지: 업로드한 줄을 기존 내역과 맞춰 본다. 기존 내역 한 건은 업로드 한 줄과만 짝지어지므로,
+// 파일에 같은 줄이 2건이고 기존에 1건이면 1건만 새로 추가된다(같은 날 같은 금액의 실제 거래는 유지).
+// 메모가 같은 내역끼리 먼저 짝짓고, 메모만 다르면 새로 추가하지 않고 메모를 파일 값으로 고친다.
+function mergeUploaded(existing, parsed, groupOf, sameItem){
+  const pool = new Map();
+  existing.forEach(e=>{ const k = groupOf(e); (pool.get(k) || pool.set(k, []).get(k)).push(e); });
+  const take = (e, test)=>{
+    const list = pool.get(groupOf(e)) || [];
+    const i = list.findIndex(x=> sameItem(x, e) && test(x));
+    return i < 0 ? null : list.splice(i, 1)[0];
+  };
+  const memoOf = x => String(x.memo || '').trim();
+  const unmatched = parsed.filter(e=> !take(e, x=> memoOf(x) === memoOf(e)));
+  const fresh = []; let memoUpdated = 0;
+  unmatched.forEach(e=>{
+    const hit = take(e, ()=>true);
+    if(!hit){ fresh.push(e); return; }
+    if(memoOf(e)){ hit.memo = e.memo; memoUpdated++; }
+  });
+  return { fresh, duplicates: parsed.length - fresh.length, memoUpdated };
+}
+function uploadResultText(addedCount, m, skippedCount){
+  return `업로드 완료 — 추가 ${addedCount}건` + (m.duplicates ? `, 이미 있어 건너뜀 ${m.duplicates}건` : '')
+    + (m.memoUpdated ? ` (이 중 메모 수정 ${m.memoUpdated}건)` : '') + `, 형식 오류로 제외 ${skippedCount}건`;
+}
+
 function pickField(row, keys){
   for(const k of Object.keys(row)){
     const norm = k.replace(/\s/g,'').toLowerCase();
@@ -3377,15 +3406,20 @@ divUploadBtn.addEventListener('click', async ()=>{
       addedCount++;
     });
 
-    if(parsed.length){
-      userDividends.push(...parsed);
+    const realCode = c => (c && c !== '-') ? normCodeKey(c) : '';
+    const merged = mergeUploaded(userDividends, parsed,
+      e=> [e.date, e.account, Number(e.amount)].join('\u0000'),
+      (a,b)=> (realCode(a.code) && realCode(a.code) === realCode(b.code)) || normStockName(a.name) === normStockName(b.name));
+    addedCount = merged.fresh.length;
+    if(addedCount || merged.memoUpdated){
+      userDividends.push(...merged.fresh);
       localStorage.setItem('userDividends', JSON.stringify(userDividends));
       scheduleAutoPush();
       renderDividendsPage(); refreshDividendDependents();
     }
 
-    status.textContent = `업로드 완료 — 추가 ${addedCount}건, 형식 오류로 제외 ${skippedCount}건`;
-    status.style.color = addedCount ? 'var(--up)' : 'var(--down)';
+    status.textContent = uploadResultText(addedCount, merged, skippedCount);
+    status.style.color = (addedCount || merged.duplicates) ? 'var(--up)' : 'var(--down)';
     divFileInput.value = '';
     divUploadBtn.disabled = true;
   }catch(err){
