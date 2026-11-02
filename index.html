@@ -1072,7 +1072,7 @@
 
         <section>
           <div class="sec-head">
-            <div class="sec-title">배당금 내역</div>
+            <div class="sec-title">직접 등록한 배당금</div>
             <div class="sec-sub">최신순 · 위 등록 폼으로 추가한 내역</div>
           </div>
           <div class="card table-scroll">
@@ -1507,15 +1507,19 @@ function getSnapshotDates(){
   const start = getDataStartDate();
   if(start){
     const today = toLocalISO(new Date());
+    let dataDates = [];
+    try{ dataDates = [...Object.keys(priceSnapshots||{}), ...Object.keys(cashSnapshots||{})].filter(d=> hasValuationData(d)); }catch(e){}
+    // 평가금이 입력된 달은 입력한 날짜만 쓰고, 입력이 없는 달만 말일을 자동으로 채운다.
+    const dataMonths = new Set(dataDates.map(d=> d.slice(0,7)));
     let y = parseInt(start.slice(0,4),10), m = parseInt(start.slice(5,7),10) - 1;
     const ty = new Date().getFullYear(), tm = new Date().getMonth();
     let guard = 0;
     while((y < ty || (y === ty && m <= tm)) && guard++ < 1200){
       const last = toLocalISO(new Date(y, m + 1, 0));
-      set.add(last > today ? today : last);
+      if(!dataMonths.has(last.slice(0,7))) set.add(last > today ? today : last);
       m++; if(m > 11){ m = 0; y++; }
     }
-    try{ [...Object.keys(priceSnapshots||{}), ...Object.keys(cashSnapshots||{})].forEach(d=>{ if(hasValuationData(d)) set.add(d); }); }catch(e){}
+    dataDates.forEach(d=> set.add(d));
   }
   return Array.from(set).sort();
 }
@@ -1931,9 +1935,9 @@ function renderTrendCharts(){
     return;
   }
   const names = getAccountNames();
-  const today = toLocalISO(new Date());
-  const isMonthEnd = d => { const t = new Date(d+'T00:00:00'); return d === today || new Date(t.getFullYear(), t.getMonth(), t.getDate()+1).getDate() === 1; };
-  const labelOf = d => d.slice(2,4)+'.'+d.slice(5,7) + (isMonthEnd(d) ? '' : '.'+d.slice(8,10));
+  const monthCount = {};
+  dates.forEach(d=>{ const m = d.slice(0,7); monthCount[m] = (monthCount[m] || 0) + 1; });
+  const labelOf = d => d.slice(2,4)+'.'+d.slice(5,7) + (monthCount[d.slice(0,7)] > 1 ? '.'+d.slice(8,10) : '');
   const labels = dates.map(labelOf);
   const allRows = allDates.map(d=>{ const am = getAccountsForDate(d); const per = {}; names.forEach(n=>{ per[n] = acctValueAt(n, d, am); }); return per; });
   const fin = v => (typeof v === 'number' && isFinite(v)) ? v : 0;
