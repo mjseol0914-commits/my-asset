@@ -525,6 +525,10 @@
             <div class="sec-sub" id="trendSub">계좌별 평가금 vs 누적 원금</div>
           </div>
           <div class="card">
+            <div class="pills" style="margin-bottom:12px;">
+              <button class="pill active" data-trend-type="value" type="button">평가금 + 누적 원금</button>
+              <button class="pill" data-trend-type="return" type="button">원금 + 수익률</button>
+            </div>
             <div class="chart-box tall"><canvas id="trendChart"></canvas></div>
           </div>
         </section>
@@ -1946,16 +1950,25 @@ function renderTrendCharts(){
   const allDiv = allRows.map(r=> names.reduce((s,n)=>s+r[n].counted,0));
   const rows = pick(allRows), principalLine = pick(allPrincipal), totalVal = pick(allTotal), divLine = pick(allDiv);
   const anyEstimated = rows.some(r=> names.some(n=> r[n].estimated));
-  if(sub) sub.textContent = `${fmtDot(dates[0])} — ${fmtDot(dates[dates.length-1])} · 계좌별 평가금(누적 막대) vs 누적 원금(선)` + (anyEstimated ? ' · 평가금 미입력 구간은 원금 기준' : '');
+  const trendType = renderTrendCharts.type || 'value', isReturnType = trendType === 'return';
+  document.querySelectorAll('[data-trend-type]').forEach(b=> b.classList.toggle('active', b.dataset.trendType === trendType));
+  if(sub) sub.textContent = `${fmtDot(dates[0])} — ${fmtDot(dates[dates.length-1])} · ` + (isReturnType
+    ? '계좌별 원금(누적 막대) vs 수익률(선)' + (anyEstimated ? ' · 평가금 미입력 구간은 수익률 제외' : '')
+    : '계좌별 평가금(누적 막대) vs 누적 원금(선)' + (anyEstimated ? ' · 평가금 미입력 구간은 원금 기준' : ''));
   if(monthlySub) monthlySub.textContent = `전월 대비 평가금 증감율 (%) · ${fmtDot(dates[0])} — ${fmtDot(dates[dates.length-1])}`;
 
   const axisFmt = v => v >= 1e8 ? (v/1e8).toFixed(1).replace(/\.0$/,'')+'억' : (v/1e4).toLocaleString('ko-KR')+'만';
   const barSets = names.map(n=>({
-    type:'bar', label:n, data: rows.map(r=>fin(r[n].value)), backgroundColor: ACCT_COLOR[n], borderWidth:0, stack:'acct', maxBarThickness:38, order:2,
-    _est: rows.map(r=>r[n].estimated)
+    type:'bar', label:n, data: rows.map(r=>fin(isReturnType ? r[n].principal : r[n].value)), backgroundColor: ACCT_COLOR[n], borderWidth:0, stack:'acct', maxBarThickness:38, order:2,
+    _est: isReturnType ? null : rows.map(r=>r[n].estimated)
   }));
-  const lineSet = { type:'line', label:'누적 원금', data: principalLine.map(fin), borderColor:'#7c7f89', backgroundColor:'#7c7f89',
-    borderWidth:2, pointRadius:2, pointHoverRadius:4, tension:.15, order:1, stack:undefined };
+  // 수익률 = (평가금 + 반영 배당금 − 누적 원금) ÷ 누적 원금. 전 계좌가 평가금 미입력인 달은 선을 끊는다.
+  const returnLine = rows.map((r,i)=> (!principalLine[i] || names.every(n=> r[n].estimated || !r[n].principal)) ? null : (totalVal[i] + divLine[i] - principalLine[i]) / principalLine[i] * 100);
+  const lineSet = isReturnType
+    ? { type:'line', label:'수익률', data: returnLine, yAxisID:'y1', _pct:true, borderColor:'#7c7f89', backgroundColor:'#7c7f89',
+        borderWidth:2, pointRadius:2, pointHoverRadius:4, tension:.15, order:1, stack:undefined }
+    : { type:'line', label:'누적 원금', data: principalLine.map(fin), borderColor:'#7c7f89', backgroundColor:'#7c7f89',
+        borderWidth:2, pointRadius:2, pointHoverRadius:4, tension:.15, order:1, stack:undefined };
   trendChartInst = safeNewChart('trendChart', {
     type:'bar',
     data:{ labels, datasets:[ ...barSets, lineSet ] },
@@ -1966,13 +1979,14 @@ function renderTrendCharts(){
         tooltip:{ backgroundColor:'#20232b', borderColor:'#20232b', borderWidth:1, padding:12, titleColor:'#ffffff', bodyColor:'#ffffff',
           titleFont:{size:12,weight:'600'}, bodyFont:{size:12, family:"'IBM Plex Mono',monospace"},
           callbacks:{
-            label: c => { const est = c.dataset._est && c.dataset._est[c.dataIndex]; return ` ${c.dataset.label}: ${won(c.parsed.y)} 원` + (est ? ' (원금 기준)' : ''); },
-            afterBody: items => { const i = items.length ? items[0].dataIndex : -1; return i >= 0 ? [` 평가금 합계: ${won(totalVal[i])} 원`].concat(divLine[i] ? [` 누적 배당금: ${won(divLine[i])} 원`] : []) : []; }
+            label: c => { if(c.dataset._pct) return ` ${c.dataset.label}: ${pct(c.parsed.y)}`; const est = c.dataset._est && c.dataset._est[c.dataIndex]; return ` ${c.dataset.label}: ${won(c.parsed.y)} 원` + (est ? ' (원금 기준)' : ''); },
+            afterBody: items => { const i = items.length ? items[0].dataIndex : -1; return i >= 0 ? (isReturnType ? [` 원금 합계: ${won(principalLine[i])} 원`] : []).concat([` 평가금 합계: ${won(totalVal[i])} 원`]).concat(divLine[i] ? [` 누적 배당금: ${won(divLine[i])} 원`] : []) : []; }
           } }
       },
       scales:{
         x:{ stacked:true, grid:{ display:false }, ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:14, font:{size:10.5} } },
-        y:{ stacked:true, beginAtZero:true, grid:{ color:'#eeeeec' }, ticks:{ callback:axisFmt, font:{size:10.5} } }
+        y:{ stacked:true, beginAtZero:true, grid:{ color:'#eeeeec' }, ticks:{ callback:axisFmt, font:{size:10.5} } },
+        ...(isReturnType ? { y1:{ position:'right', grid:{ drawOnChartArea:false }, ticks:{ callback:v=> v+'%', font:{size:10.5} } } } : {})
       }
     }
   });
@@ -2007,6 +2021,9 @@ try{
    STATIC CHARTS (full history, unaffected by 조회일)
    ============================================================ */
 renderTrendCharts();
+document.querySelectorAll('[data-trend-type]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ renderTrendCharts.type = btn.dataset.trendType; renderTrendCharts(); });
+});
 document.querySelectorAll('[data-dash-preset]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const preset = btn.dataset.dashPreset, t = new Date(), r = renderTrendCharts.range;
