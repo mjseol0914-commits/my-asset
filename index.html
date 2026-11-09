@@ -332,6 +332,19 @@
   .dg-asset{ grid-column:span 5; order:4; display:flex; flex-direction:column; }
   .dg-alloc{ grid-column:span 7; order:5; }
   .dg-pension, .dg-hold{ grid-column:span 12; order:6; }
+  .pension-layout{ display:grid; grid-template-columns:minmax(0, 2fr) minmax(250px, 1fr); gap:14px; align-items:start; }
+  .pension-chart{ padding:16px; font-size:12px; }
+  .pension-chart h3{ font-size:14px; margin-bottom:16px; }
+  .pension-chart-row + .pension-chart-row{ margin-top:16px; }
+  .pension-stack{ display:flex; overflow:hidden; height:18px; border-radius:4px; background:var(--bg-alt); margin:6px 0 8px; }
+  .pension-stack span, .pension-key i{ background:var(--pension-color); }
+  .pension-key{ display:flex; flex-wrap:wrap; gap:4px 10px; list-style:none; }
+  .pension-key i{ display:inline-block; width:8px; height:8px; margin-right:4px; border-radius:2px; }
+  .pension-risk{ --pension-color:#b8843a; }
+  .pension-safe{ --pension-color:#3f8b71; }
+  .pension-liquid{ --pension-color:#5082bb; }
+  .pension-unset{ --pension-color:#8a8d99; }
+  @media(max-width:900px){ .pension-layout{ grid-template-columns:minmax(0, 1fr); } }
   .dg-pension tbody th{ text-align:left; }
   .dg-pension tbody th, .dg-pension td{ padding:6px 10px; white-space:nowrap; }
   .dg-pension .pension-total{ background:var(--bg-alt); font-weight:700; }
@@ -590,11 +603,17 @@
             <div class="sec-title" id="pensionTitle">IRP · 퇴직연금 자산군별 내역</div>
             <div class="sec-sub" id="pensionDate"></div>
           </div>
-          <div class="card table-scroll">
-            <table aria-labelledby="pensionTitle">
-              <thead><tr><th scope="col">구분</th><th scope="col">투자금</th><th scope="col">평가금</th><th scope="col">수익률</th><th scope="col">현재비중</th><th scope="col">한도금액</th><th scope="col">매수가능</th></tr></thead>
-              <tbody id="pensionTable"></tbody>
-            </table>
+          <div class="pension-layout">
+            <div class="card table-scroll">
+              <table aria-labelledby="pensionTitle">
+                <thead><tr><th scope="col">구분</th><th scope="col">투자금</th><th scope="col">평가금</th><th scope="col">수익률</th><th scope="col">현재비중</th><th scope="col">한도금액</th><th scope="col">매수가능</th></tr></thead>
+                <tbody id="pensionTable"></tbody>
+              </table>
+            </div>
+            <div class="card pension-chart">
+              <h3>계좌별 평가금 비중</h3>
+              <div id="pensionChart"></div>
+            </div>
           </div>
           <p class="pension-note">한도와 매수가능은 조회일 평가금에 위험 70%, 안전 30%를 적용한 참고값입니다. 채권·채권혼합은 안전, 파킹·현금·예수금은 현금성으로 집계합니다. 미분류가 있으면 매수가능 금액을 생략합니다.</p>
         </section>
@@ -2138,12 +2157,12 @@ function renderPensionTable(snap){
   document.getElementById('pensionSection').hidden = !accounts.length;
   document.getElementById('pensionDate').textContent = `${fmtDot(snap)} 기준 · 원`;
 
-  document.getElementById('pensionTable').innerHTML = accounts.map(account=>{
+  const allocations = accounts.map(account=>{
     const cash = Number(currentAccounts[account].cash) || 0;
-    const risk = {label:'위험', invested:0, valuation:0, ratio:0.7};
-    const safe = {label:'안전', invested:0, valuation:0, ratio:0.3};
-    const liquid = {label:'현금성', invested:cash, valuation:cash};
-    const unset = {label:'미분류', invested:0, valuation:0};
+    const risk = {label:'위험', key:'risk', invested:0, valuation:0, ratio:0.7};
+    const safe = {label:'안전', key:'safe', invested:0, valuation:0, ratio:0.3};
+    const liquid = {label:'현금성', key:'liquid', invested:cash, valuation:cash};
+    const unset = {label:'미분류', key:'unset', invested:0, valuation:0};
     let hasUnset = false;
     currentHoldings.forEach(([name, code, , , invested, , valuation])=>{
       if(name !== account) return;
@@ -2162,6 +2181,10 @@ function renderPensionTable(snap){
     const groups = hasUnset ? [risk, safe, liquid, unset] : [risk, safe, liquid];
     const totalInvested = groups.reduce((sum, group)=>sum + group.invested, 0);
     const totalValuation = groups.reduce((sum, group)=>sum + group.valuation, 0);
+    return {account, groups, totalInvested, totalValuation, hasUnset};
+  });
+
+  document.getElementById('pensionTable').innerHTML = allocations.map(({account, groups, totalInvested, totalValuation, hasUnset})=>{
     const amounts = (invested, valuation)=>{
       const ret = invested ? (valuation - invested) / invested * 100 : null;
       return `<td>${won(invested)}</td><td>${won(valuation)}</td><td class="${clsFor(ret)}">${ret === null ? '–' : pct(ret)}</td>`;
@@ -2176,6 +2199,26 @@ function renderPensionTable(snap){
     }).join('');
     return rows + `<tr class="pension-total"><th scope="row">${account} 합계</th>
       ${amounts(totalInvested, totalValuation)}<td></td><td></td><td></td></tr>`;
+  }).join('');
+  renderPensionChart(allocations);
+}
+
+function renderPensionChart(allocations){
+  document.getElementById('pensionChart').innerHTML = allocations.map(({account, groups, totalValuation})=>{
+    const canStack = totalValuation > 0 && groups.every(group=>group.valuation >= 0);
+    const segments = canStack ? groups.filter(group=>group.valuation > 0).map(({key, valuation})=>
+      `<span class="pension-${key}" style="width:${valuation / totalValuation * 100}%"></span>`
+    ).join('') : '';
+    const keys = groups.map(({label, key, valuation})=>{
+      const share = totalValuation ? (valuation / totalValuation * 100).toFixed(1) + '%' : '–';
+      return `<li><i class="pension-${key}" aria-hidden="true"></i>${label} ${share}</li>`;
+    }).join('');
+    const empty = groups.some(group=>group.valuation < 0) ? '음수 평가금이 있어 막대를 표시할 수 없습니다.' : '평가금 내역이 없습니다.';
+    return `<div class="pension-chart-row">
+      <strong>${account}</strong>
+      <div class="pension-stack" aria-hidden="true">${segments}</div>
+      ${canStack ? `<ul class="pension-key">${keys}</ul>` : `<p>${empty}</p>`}
+    </div>`;
   }).join('');
 }
 
